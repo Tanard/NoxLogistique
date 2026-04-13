@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   LayoutDashboard,
   Plus,
@@ -42,7 +42,7 @@ const STATUTS = [
   { label: 'Annulé', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5' },
 ]
 
-const ADMIN_ACCOUNTS = [
+const DEFAULT_ACCOUNTS = [
   { username: 'admin', code: 'nox2026' },
   { username: 'logistique', code: 'logis2026' },
 ]
@@ -64,6 +64,17 @@ const SAMPLE_DATA = [
 
 function formatDate(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+function loadFromStorage(key, fallback) {
+  try {
+    const data = localStorage.getItem(key)
+    return data ? JSON.parse(data) : fallback
+  } catch { return fallback }
+}
+
+function saveToStorage(key, data) {
+  localStorage.setItem(key, JSON.stringify(data))
 }
 
 function todayISO() {
@@ -123,14 +134,15 @@ function Modal({ open, onClose, children, title }) {
   )
 }
 
-/* ─── Modal Login Gestion ─── */
-function ModalLogin({ open, onClose, onLogin }) {
+/* ─── Modal Login ─── */
+function ModalLogin({ open, onClose, onLogin, accounts, onRegister }) {
   const [username, setUsername] = useState('')
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
+  const [showRegister, setShowRegister] = useState(false)
 
   const handleLogin = () => {
-    const account = ADMIN_ACCOUNTS.find(a => a.username === username.trim().toLowerCase() && a.code === code)
+    const account = accounts.find(a => a.username === username.trim().toLowerCase() && a.code === code)
     if (account) {
       onLogin(account.username)
       setUsername(''); setCode(''); setError('')
@@ -140,8 +152,25 @@ function ModalLogin({ open, onClose, onLogin }) {
     }
   }
 
+  const handleRegister = (newAccount) => {
+    onRegister(newAccount)
+    setShowRegister(false)
+  }
+
+  if (showRegister) {
+    return (
+      <ModalRegister
+        open={open}
+        onClose={() => setShowRegister(false)}
+        onBack={() => setShowRegister(false)}
+        onRegister={handleRegister}
+        accounts={accounts}
+      />
+    )
+  }
+
   return (
-    <Modal open={open} onClose={() => { setError(''); onClose() }} title="Accès Gestion">
+    <Modal open={open} onClose={() => { setError(''); onClose() }} title="Connexion">
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">Nom d'utilisateur</label>
@@ -153,9 +182,59 @@ function ModalLogin({ open, onClose, onLogin }) {
         </div>
         {error && <p className="text-red-400 text-sm">{error}</p>}
       </div>
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
-        <button onClick={onClose} className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">Annuler</button>
-        <button onClick={handleLogin} className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: COLORS.accent }}>Connexion</button>
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+        <button onClick={() => setShowRegister(true)} className="text-sm text-gray-400 hover:text-white transition-colors underline underline-offset-2">
+          Créer un compte
+        </button>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">Annuler</button>
+          <button onClick={handleLogin} className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: COLORS.accent }}>Connexion</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/* ─── Modal Créer un compte ─── */
+function ModalRegister({ open, onClose, onBack, onRegister, accounts }) {
+  const [username, setUsername] = useState('')
+  const [code, setCode] = useState('')
+  const [confirmCode, setConfirmCode] = useState('')
+  const [error, setError] = useState('')
+
+  const handleRegister = () => {
+    const trimmed = username.trim().toLowerCase()
+    if (!trimmed) { setError('Nom d\'utilisateur requis'); return }
+    if (trimmed.length < 3) { setError('Minimum 3 caractères pour le nom'); return }
+    if (!code || code.length < 4) { setError('Le code doit contenir au moins 4 caractères'); return }
+    if (code !== confirmCode) { setError('Les codes ne correspondent pas'); return }
+    if (accounts.find(a => a.username === trimmed)) { setError('Ce nom d\'utilisateur existe déjà'); return }
+    onRegister({ username: trimmed, code })
+    setUsername(''); setCode(''); setConfirmCode(''); setError('')
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title="Créer un compte">
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Nom d'utilisateur</label>
+          <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Choisir un identifiant" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Code d'accès</label>
+          <input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder="Minimum 4 caractères" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Confirmer le code</label>
+          <input type="password" value={confirmCode} onChange={e => setConfirmCode(e.target.value)} placeholder="Répéter le code" onKeyDown={e => e.key === 'Enter' && handleRegister()} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
+        </div>
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+      </div>
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+        <button onClick={onBack} className="text-sm text-gray-400 hover:text-white transition-colors underline underline-offset-2">
+          Retour à la connexion
+        </button>
+        <button onClick={handleRegister} className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: COLORS.accent }}>Créer</button>
       </div>
     </Modal>
   )
@@ -356,7 +435,7 @@ function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin }) {
 
 /* ─── App ─── */
 export default function App() {
-  const [besoins, setBesoins] = useState(SAMPLE_DATA)
+  const [besoins, setBesoins] = useState(() => loadFromStorage('nox_besoins', SAMPLE_DATA))
   const [activeNav, setActiveNav] = useState('general')
   const [showNew, setShowNew] = useState(false)
   const [selectedBesoin, setSelectedBesoin] = useState(null)
@@ -365,9 +444,18 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortKey, setSortKey] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
-  const [adminUser, setAdminUser] = useState(null)
+  const [adminUser, setAdminUser] = useState(() => loadFromStorage('nox_admin', null))
   const [showLogin, setShowLogin] = useState(false)
+  const [accounts, setAccounts] = useState(() => loadFromStorage('nox_accounts', DEFAULT_ACCOUNTS))
   const isAdmin = !!adminUser
+
+  useEffect(() => { saveToStorage('nox_besoins', besoins) }, [besoins])
+  useEffect(() => { saveToStorage('nox_accounts', accounts) }, [accounts])
+  useEffect(() => { saveToStorage('nox_admin', adminUser) }, [adminUser])
+
+  const addAccount = (account) => {
+    setAccounts(prev => [...prev, account])
+  }
 
   const counts = useMemo(() => {
     const map = {}
@@ -489,7 +577,7 @@ export default function App() {
                 style={{ backgroundColor: COLORS.sidebar }}
               >
                 <Lock size={15} />
-                Gestion
+                Connexion
               </button>
             )}
           </div>
@@ -648,6 +736,8 @@ export default function App() {
         open={showLogin}
         onClose={() => setShowLogin(false)}
         onLogin={setAdminUser}
+        accounts={accounts}
+        onRegister={addAccount}
       />
     </div>
   )
