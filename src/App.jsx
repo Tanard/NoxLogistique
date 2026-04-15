@@ -51,21 +51,20 @@ export default function App() {
   }, [user?.id, selectedId, loadRole])
 
   // Fix #7 & #12 & #26 — Ouvre auto le sélecteur de festival au login si != 1 festival dispo
-  // Fix #26 : usar ref pour ne pas ouvrir après un F5, seulement au premier login
-  const hasShownFestivalSelectRef = useRef(false)
+  // Fix #26 : détecter un NOUVEAU login (user.id change), pas une restauration de session (F5)
+  const prevUserIdRef = useRef(null)
   useEffect(() => {
-    if (user && !loadingFestivals && festivals.length !== 1 && !selectedId && !hasShownFestivalSelectRef.current) {
-      setShowFestivalSelect(true)
-      hasShownFestivalSelectRef.current = true
+    if (user?.id) {
+      // Nouveau login : user.id a changé (ou c'est la première fois qu'on le voit)
+      if (prevUserIdRef.current !== user.id && !loadingFestivals && festivals.length !== 1 && !selectedId) {
+        setShowFestivalSelect(true)
+      }
+      prevUserIdRef.current = user.id
+    } else {
+      // Logout
+      prevUserIdRef.current = null
     }
   }, [user?.id, loadingFestivals, festivals.length, selectedId])
-
-  // Fix #26 : réinitialiser la ref au logout
-  useEffect(() => {
-    if (!user) {
-      hasShownFestivalSelectRef.current = false
-    }
-  }, [user])
 
   // Fix #13 — Reset des états locaux à la déconnexion
   useEffect(() => {
