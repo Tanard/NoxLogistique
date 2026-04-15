@@ -35,8 +35,7 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
   const [searchQuery, setSearchQuery]     = useState('')
   const [selectedUser, setSelectedUser]   = useState(null)
   const [showCreate, setShowCreate]       = useState(false)
-  const [festivalSort, setFestivalSort]   = useState('name')
-  const [festivalSortDir, setFestivalSortDir] = useState('asc')
+  const [selectedFestival, setSelectedFestival] = useState(null)
 
   const {
     users, loading, reload,
@@ -48,43 +47,16 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
   const festivalStats = festivals.map(f => {
     const members = users.filter(u => u.memberships.some(m => m.festivalId === f.id))
     const admins = members.filter(u => u.memberships.find(m => m.festivalId === f.id)?.role === 'admin')
-    const poleManagers = members.filter(u => u.memberships.find(m => m.festivalId === f.id)?.role === 'pole_manager')
     return {
       ...f,
       memberCount: members.length,
       adminCount: admins.length,
-      poleManagerCount: poleManagers.length,
     }
   })
 
-  // Tri des festivals
-  const sortedFestivals = [...festivalStats].sort((a, b) => {
-    let va, vb
-    if (festivalSort === 'name') {
-      va = (a.name ?? '').toLowerCase()
-      vb = (b.name ?? '').toLowerCase()
-    } else if (festivalSort === 'members') {
-      va = a.memberCount
-      vb = b.memberCount
-    } else if (festivalSort === 'admins') {
-      va = a.adminCount
-      vb = b.adminCount
-    }
-    if (va < vb) return festivalSortDir === 'asc' ? -1 : 1
-    if (va > vb) return festivalSortDir === 'asc' ? 1 : -1
-    return 0
-  })
-
-  const handleFestivalSort = (key) => {
-    if (festivalSort === key) {
-      setFestivalSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setFestivalSort(key)
-      setFestivalSortDir('asc')
-    }
-  }
-
+  // Filtre les users par festival sélectionné + recherche
   const filtered = users.filter(u => {
+    if (selectedFestival && !u.memberships.some(m => m.festivalId === selectedFestival)) return false
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
     return (u.email ?? '').toLowerCase().includes(q)
@@ -122,80 +94,52 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           </button>
         </div>
 
-        {/* ── Festivals ────────────────────────────────────────────────────── */}
-        <div className="mb-8">
-          <h3 className="text-lg font-bold mb-4" style={{ color: COLORS.textDark }}>Festivals</h3>
+        {/* ── Cartes Festivals (comme les cartes besoins) ────────────────────── */}
+        <div className="flex gap-4 overflow-x-auto pb-2 mb-6">
+          {/* Total Festivals */}
+          <button
+            onClick={() => setSelectedFestival(null)}
+            className="flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] transition-all cursor-pointer hover:scale-[1.02]"
+            style={{
+              backgroundColor: COLORS.card,
+              borderLeft: `3px solid ${COLORS.accent}`,
+              outline: selectedFestival === null ? `2px solid ${COLORS.accent}` : 'none',
+            }}
+          >
+            <div className="p-2 rounded-lg" style={{ backgroundColor: COLORS.accent + '22' }}>
+              <Users size={20} style={{ color: COLORS.accent }} />
+            </div>
+            <div className="text-left">
+              <p className="text-xs text-gray-400 whitespace-nowrap">Festival</p>
+              <p className="text-2xl font-bold text-white">{festivals.length}</p>
+            </div>
+          </button>
 
-          {/* Desktop table */}
-          <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white mb-4">
-            <table className="w-full" style={{ fontSize: '13px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#2D2650' }}>
-                  <th
-                    onClick={() => handleFestivalSort('name')}
-                    className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-white transition-colors select-none"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      Festival
-                      {festivalSort === 'name' && (festivalSortDir === 'asc' ? '▲' : '▼')}
-                    </span>
-                  </th>
-                  <th
-                    onClick={() => handleFestivalSort('members')}
-                    className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-white transition-colors select-none"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      Membres
-                      {festivalSort === 'members' && (festivalSortDir === 'asc' ? '▲' : '▼')}
-                    </span>
-                  </th>
-                  <th
-                    onClick={() => handleFestivalSort('admins')}
-                    className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-white transition-colors select-none"
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      Admins
-                      {festivalSort === 'admins' && (festivalSortDir === 'asc' ? '▲' : '▼')}
-                    </span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedFestivals.map((f, i) => (
-                  <tr
-                    key={f.id}
-                    className="hover:bg-purple-50 transition-colors border-b border-gray-100"
-                    style={i % 2 !== 0 ? { backgroundColor: '#FAFAF8' } : {}}
-                  >
-                    <td className="px-4 py-3">
-                      <p className="font-semibold" style={{ color: COLORS.textDark }}>{f.name}</p>
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: COLORS.textDark }}>
-                      {f.memberCount} {f.memberCount > 1 ? 'utilisateurs' : 'utilisateur'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
-                        {f.adminCount}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
-            {sortedFestivals.map(f => (
-              <div key={f.id} className="rounded-xl p-4 shadow-sm bg-white">
-                <p className="font-semibold text-sm mb-2" style={{ color: COLORS.textDark }}>{f.name}</p>
-                <div className="flex items-center justify-between text-xs text-gray-600">
-                  <span>{f.memberCount} utilisateur{f.memberCount > 1 ? 's' : ''}</span>
-                  <span className="text-red-700 font-medium">{f.adminCount} admin{f.adminCount > 1 ? 's' : ''}</span>
+          {/* Chaque Festival */}
+          {festivalStats.map(f => {
+            const active = selectedFestival === f.id
+            return (
+              <button
+                key={f.id}
+                onClick={() => setSelectedFestival(active ? null : f.id)}
+                className="flex-shrink-0 flex flex-col items-start justify-between rounded-xl p-4 min-w-[200px] transition-all cursor-pointer hover:scale-[1.02]"
+                style={{
+                  backgroundColor: COLORS.card,
+                  borderLeft: `3px solid ${COLORS.accent}`,
+                  outline: active ? `2px solid ${COLORS.accent}` : 'none',
+                  minHeight: '100px',
+                }}
+              >
+                <div className="w-full">
+                  <p className="text-xs text-gray-400 whitespace-nowrap">{f.name}</p>
+                  <p className="text-xl font-bold text-white mt-0.5">{f.memberCount}</p>
                 </div>
-              </div>
-            ))}
-          </div>
+                <p className="text-xs text-gray-500">
+                  {f.adminCount} admin{f.adminCount > 1 ? 's' : ''}
+                </p>
+              </button>
+            )
+          })}
         </div>
 
         {/* ── Barre de recherche + bouton créer ────────────────────────────── */}
