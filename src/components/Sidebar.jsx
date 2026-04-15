@@ -23,7 +23,15 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, 
         style={{ backgroundColor: COLORS.sidebar }}
       >
         <div className="p-6 pb-2">
-          <h1 className="text-xl font-bold text-white tracking-wide">Logisticore</h1>
+          <div className="flex items-center gap-2.5 mb-0.5">
+            <img src="/nox-logo.svg" alt="Logisticore" className="w-8 h-4 object-contain flex-shrink-0" />
+            <h1 className="text-xl font-bold text-white tracking-wide leading-tight">
+              Logisticore
+              <span className="block text-[10px] font-normal text-gray-400 tracking-normal leading-tight -mt-0.5">
+                outil de gestion
+              </span>
+            </h1>
+          </div>
           <button
             onClick={() => user && onFestivalClick()}
             className="text-xs mt-0.5 truncate text-left transition-opacity hover:opacity-70"
