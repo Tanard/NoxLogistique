@@ -1,441 +1,18 @@
-import { useState, useMemo, useEffect } from 'react'
-import {
-  LayoutDashboard,
-  Plus,
-  X,
-  Menu,
-  Users,
-  UtensilsCrossed,
-  Music,
-  ShieldCheck,
-  Truck,
-  Pencil,
-  Search,
-  ClipboardList,
-  ChevronUp,
-  ChevronDown,
-  Trash2,
-  Lock,
-  LogOut,
-} from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from './hooks/useAuth'
+import { useBesoins } from './hooks/useBesoins'
+import { useFestival } from './hooks/useFestival'
+import { POLES, SORT_KEYS } from './constants'
+import { LoadingScreen } from './components/LoadingScreen'
+import { Sidebar } from './components/Sidebar'
+import LoginPage from './pages/LoginPage'
+import DashboardPage from './pages/DashboardPage'
+import { ModalFestivalSelect } from './modals/ModalFestivalSelect'
+import { ModalNouveau } from './modals/ModalNouveau'
+import { ModalDetail } from './modals/ModalDetail'
 
-/* ─── Constantes ─── */
-const COLORS = {
-  sidebar: '#1E1B2E',
-  card: '#3D2C5E',
-  accent: '#7C3AED',
-  bg: '#F8F7FC',
-  textDark: '#2D2B3A',
-}
-
-const POLES = [
-  { label: 'Bénévole', icon: Users, color: '#8B5CF6' },
-  { label: 'Restauration', icon: UtensilsCrossed, color: '#F472B6' },
-  { label: 'Artiste', icon: Music, color: '#FB923C' },
-  { label: 'Sécurité', icon: ShieldCheck, color: '#34D399' },
-  { label: 'Logistique', icon: Truck, color: '#60A5FA' },
-]
-
-const STATUTS = [
-  { label: 'En attente', bg: '#FEF3C7', text: '#D97706', border: '#FCD34D' },
-  { label: 'Validé', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' },
-  { label: 'Annulé', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5' },
-]
-
-const DEFAULT_ACCOUNTS = [
-  { username: 'admin', code: 'nox2026' },
-  { username: 'logistique', code: 'logis2026' },
-]
-
-const NAV_ITEMS = [
-  { label: 'Général', icon: LayoutDashboard, id: 'general' },
-  // Ajouter d'autres onglets ici :
-  // { label: 'Planning', icon: Calendar, id: 'planning' },
-]
-
-const SAMPLE_DATA = [
-  { id: 1, pole: 'Bénévole', date: '2026-04-10', designation: 'Talkies-walkies', quantite: 20, caracteristique: 'Portée 5km minimum', usage: 'Communication entre les équipes sur le site', statut: 'En attente', longueur: '', largeur: '', hauteur: '', electricite: 'Non', electriciteDetail: '', eau: 'Non', eauDetail: '' },
-  { id: 2, pole: 'Restauration', date: '2026-04-09', designation: 'Tables pliantes 180cm', quantite: 15, caracteristique: 'Résistantes, pieds réglables', usage: 'Service restauration zone VIP', statut: 'Validé', longueur: '180', largeur: '75', hauteur: '74', electricite: 'Oui', electriciteDetail: '2 prises 220V par table pour réchauds', eau: 'Oui', eauDetail: "Point d'eau à proximité pour lavage" },
-  { id: 3, pole: 'Artiste', date: '2026-04-08', designation: 'Loges climatisées', quantite: 4, caracteristique: 'Algeco 20m² avec clim réversible', usage: 'Loges artistes backstage', statut: 'En attente', longueur: '600', largeur: '300', hauteur: '280', electricite: 'Oui', electriciteDetail: '32A triphasé pour climatisation', eau: 'Non', eauDetail: '' },
-  { id: 4, pole: 'Sécurité', date: '2026-04-07', designation: 'Barrières Vauban', quantite: 120, caracteristique: 'Acier galvanisé 2m', usage: 'Délimitation fosse et accès scènes', statut: 'Validé', longueur: '200', largeur: '5', hauteur: '110', electricite: 'Non', electriciteDetail: '', eau: 'Non', eauDetail: '' },
-  { id: 5, pole: 'Logistique', date: '2026-04-06', designation: 'Groupe électrogène 100kVA', quantite: 2, caracteristique: 'Diesel, insonorisé', usage: 'Alimentation scène principale et son', statut: 'Annulé', longueur: '250', largeur: '120', hauteur: '150', electricite: 'Oui', electriciteDetail: 'Raccordement TGBT principal', eau: 'Non', eauDetail: '' },
-  { id: 6, pole: 'Bénévole', date: '2026-04-11', designation: 'Gilets haute visibilité', quantite: 50, caracteristique: 'Jaune fluo, taille unique', usage: 'Identification des bénévoles sur site', statut: 'En attente', longueur: '', largeur: '', hauteur: '', electricite: 'Non', electriciteDetail: '', eau: 'Non', eauDetail: '' },
-]
-
-function formatDate(d) {
-  return new Date(d + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
-function loadFromStorage(key, fallback) {
-  try {
-    const data = localStorage.getItem(key)
-    return data ? JSON.parse(data) : fallback
-  } catch { return fallback }
-}
-
-function saveToStorage(key, data) {
-  localStorage.setItem(key, JSON.stringify(data))
-}
-
-function todayISO() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-/* ─── Badge Pôle ─── */
-function PoleBadge({ pole }) {
-  const p = POLES.find(x => x.label === pole)
-  if (!p) return <span>{pole}</span>
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-white whitespace-nowrap"
-      style={{ backgroundColor: p.color }}
-    >
-      <p.icon size={13} />
-      {p.label}
-    </span>
-  )
-}
-
-/* ─── Badge Statut ─── */
-function StatutBadge({ statut }) {
-  const s = STATUTS.find(x => x.label === statut)
-  if (!s) return <span>{statut}</span>
-  return (
-    <span
-      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
-      style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}
-    >
-      {s.label}
-    </span>
-  )
-}
-
-/* ─── Modal wrapper ─── */
-function Modal({ open, onClose, children, title }) {
-  if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6 md:p-8"
-        style={{ backgroundColor: COLORS.card }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
-            <X size={20} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Modal Login ─── */
-function ModalLogin({ open, onClose, onLogin, accounts, onRegister }) {
-  const [username, setUsername] = useState('')
-  const [code, setCode] = useState('')
-  const [error, setError] = useState('')
-  const [showRegister, setShowRegister] = useState(false)
-
-  const handleLogin = () => {
-    const account = accounts.find(a => a.username === username.trim().toLowerCase() && a.code === code)
-    if (account) {
-      onLogin(account.username)
-      setUsername(''); setCode(''); setError('')
-      onClose()
-    } else {
-      setError('Identifiants incorrects')
-    }
-  }
-
-  const handleRegister = (newAccount) => {
-    onRegister(newAccount)
-    setShowRegister(false)
-  }
-
-  if (showRegister) {
-    return (
-      <ModalRegister
-        open={open}
-        onClose={() => setShowRegister(false)}
-        onBack={() => setShowRegister(false)}
-        onRegister={handleRegister}
-        accounts={accounts}
-      />
-    )
-  }
-
-  return (
-    <Modal open={open} onClose={() => { setError(''); onClose() }} title="Connexion">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Nom d'utilisateur</label>
-          <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Identifiant" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Code</label>
-          <input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder="Code d'accès" onKeyDown={e => e.key === 'Enter' && handleLogin()} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-        </div>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-      </div>
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
-        <button onClick={() => setShowRegister(true)} className="text-sm text-gray-400 hover:text-white transition-colors underline underline-offset-2">
-          Créer un compte
-        </button>
-        <div className="flex gap-3">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">Annuler</button>
-          <button onClick={handleLogin} className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: COLORS.accent }}>Connexion</button>
-        </div>
-      </div>
-    </Modal>
-  )
-}
-
-/* ─── Modal Créer un compte ─── */
-function ModalRegister({ open, onClose, onBack, onRegister, accounts }) {
-  const [username, setUsername] = useState('')
-  const [code, setCode] = useState('')
-  const [confirmCode, setConfirmCode] = useState('')
-  const [error, setError] = useState('')
-
-  const handleRegister = () => {
-    const trimmed = username.trim().toLowerCase()
-    if (!trimmed) { setError('Nom d\'utilisateur requis'); return }
-    if (trimmed.length < 3) { setError('Minimum 3 caractères pour le nom'); return }
-    if (!code || code.length < 4) { setError('Le code doit contenir au moins 4 caractères'); return }
-    if (code !== confirmCode) { setError('Les codes ne correspondent pas'); return }
-    if (accounts.find(a => a.username === trimmed)) { setError('Ce nom d\'utilisateur existe déjà'); return }
-    onRegister({ username: trimmed, code })
-    setUsername(''); setCode(''); setConfirmCode(''); setError('')
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="Créer un compte">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Nom d'utilisateur</label>
-          <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="Choisir un identifiant" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Code d'accès</label>
-          <input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder="Minimum 4 caractères" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Confirmer le code</label>
-          <input type="password" value={confirmCode} onChange={e => setConfirmCode(e.target.value)} placeholder="Répéter le code" onKeyDown={e => e.key === 'Enter' && handleRegister()} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-        </div>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-      </div>
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
-        <button onClick={onBack} className="text-sm text-gray-400 hover:text-white transition-colors underline underline-offset-2">
-          Retour à la connexion
-        </button>
-        <button onClick={handleRegister} className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: COLORS.accent }}>Créer</button>
-      </div>
-    </Modal>
-  )
-}
-
-/* ─── Modal Nouveau Besoin ─── */
-function ModalNouveau({ open, onClose, onSave }) {
-  const [form, setForm] = useState({ pole: POLES[0].label, designation: '', quantite: '', caracteristique: '', usage: '' })
-  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
-
-  const handleSave = () => {
-    if (!form.designation.trim() || !form.quantite) return
-    onSave({
-      ...form,
-      quantite: Number(form.quantite),
-      date: todayISO(),
-      statut: 'En attente',
-      longueur: '', largeur: '', hauteur: '',
-      electricite: 'Non', electriciteDetail: '',
-      eau: 'Non', eauDetail: '',
-    })
-    setForm({ pole: POLES[0].label, designation: '', quantite: '', caracteristique: '', usage: '' })
-    onClose()
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="Nouveau Besoin">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Pôle</label>
-          <select value={form.pole} onChange={e => set('pole', e.target.value)} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
-            {POLES.map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Désignation du besoin *</label>
-          <input type="text" value={form.designation} onChange={e => set('designation', e.target.value)} placeholder="Ex : Tables pliantes" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Quantité *</label>
-          <input type="number" min="1" value={form.quantite} onChange={e => set('quantite', e.target.value)} placeholder="0" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Caractéristique technique</label>
-          <textarea value={form.caracteristique} onChange={e => set('caracteristique', e.target.value)} rows={2} placeholder="Détails techniques..." className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] resize-none" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Usage prévu</label>
-          <textarea value={form.usage} onChange={e => set('usage', e.target.value)} rows={2} placeholder="À quoi cela servira-t-il ?" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] resize-none" />
-        </div>
-      </div>
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-white/10">
-        <button onClick={onClose} className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">Annuler</button>
-        <button onClick={handleSave} className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: COLORS.accent }}>Valider</button>
-      </div>
-    </Modal>
-  )
-}
-
-/* ─── Modal Détail du Besoin ─── */
-function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin }) {
-  const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState(besoin || {})
-
-  const resetForm = (b) => { setForm({ ...b }); setEditing(false) }
-  if (besoin && form.id !== besoin.id) resetForm(besoin)
-
-  if (!besoin) return null
-
-  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
-
-  const cycleStatut = () => {
-    const idx = STATUTS.findIndex(s => s.label === form.statut)
-    set('statut', STATUTS[(idx + 1) % STATUTS.length].label)
-  }
-
-  const handleSave = () => {
-    onUpdate(form)
-    setEditing(false)
-    onClose()
-  }
-
-  return (
-    <Modal open={open} onClose={() => { resetForm(besoin); onClose() }} title="Détail du besoin">
-      {/* Section 1 : Récapitulatif demandeur */}
-      <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">Demande</h3>
-          <button
-            onClick={() => setEditing(!editing)}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors text-white"
-            style={{ backgroundColor: COLORS.accent }}
-          >
-            <Pencil size={12} />
-            {editing ? 'Verrouiller' : 'Modifier'}
-          </button>
-        </div>
-        {editing ? (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Pôle</label>
-              <select value={form.pole} onChange={e => set('pole', e.target.value)} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
-                {POLES.map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Désignation</label>
-              <input type="text" value={form.designation} onChange={e => set('designation', e.target.value)} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Quantité</label>
-                <input type="number" min="1" value={form.quantite} onChange={e => set('quantite', Number(e.target.value))} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Date</label>
-                <input type="text" value={formatDate(form.date)} disabled className="w-full rounded-lg border border-white/10 bg-white/5 text-gray-400 px-3 py-2 text-sm cursor-not-allowed" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Caractéristique technique</label>
-              <textarea value={form.caracteristique} onChange={e => set('caracteristique', e.target.value)} rows={2} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] resize-none" />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Usage prévu</label>
-              <textarea value={form.usage} onChange={e => set('usage', e.target.value)} rows={2} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED] resize-none" />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <div><span className="text-gray-400">Pôle :</span> <span className="text-white ml-1"><PoleBadge pole={form.pole} /></span></div>
-            <div className="flex items-center justify-between"><span><span className="text-gray-400">Date :</span> <span className="text-white ml-1">{formatDate(form.date)}</span></span> <button onClick={cycleStatut} className="cursor-pointer transition-all" title="Cliquez pour changer le statut"><StatutBadge statut={form.statut} /></button></div>
-            <div className="col-span-2"><span className="text-gray-400">Désignation :</span> <span className="text-white ml-1">{form.designation}</span></div>
-            <div><span className="text-gray-400">Quantité :</span> <span className="text-white ml-1">{form.quantite}</span></div>
-            {form.caracteristique && <div className="col-span-2"><span className="text-gray-400">Caractéristique :</span> <span className="text-white ml-1">{form.caracteristique}</span></div>}
-            {form.usage && <div className="col-span-2"><span className="text-gray-400">Usage :</span> <span className="text-white ml-1">{form.usage}</span></div>}
-          </div>
-        )}
-      </div>
-
-      {/* Section 2 : Infos logistique (admin only) */}
-      {isAdmin && (
-        <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
-          <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4">Informations logistique</h3>
-
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Transport</p>
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            {[['longueur', 'Longueur (cm)'], ['largeur', 'Largeur (cm)'], ['hauteur', 'Hauteur (cm)']].map(([key, label]) => (
-              <div key={key}>
-                <label className="block text-xs text-gray-400 mb-1">{label}</label>
-                <input type="number" min="0" value={form[key]} onChange={e => set(key, e.target.value)} placeholder="—" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
-              </div>
-            ))}
-          </div>
-
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Dimensionnement</p>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Électricité</label>
-              <select value={form.electricite} onChange={e => { set('electricite', e.target.value); if (e.target.value === 'Non') set('electriciteDetail', '') }} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
-                <option value="Non" className="bg-gray-800">Non</option>
-                <option value="Oui" className="bg-gray-800">Oui</option>
-              </select>
-              {form.electricite === 'Oui' && (
-                <textarea value={form.electriciteDetail} onChange={e => set('electriciteDetail', e.target.value)} rows={2} placeholder="Précisez le besoin électrique..." className="mt-2 w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] resize-none" />
-              )}
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1">Eau</label>
-              <select value={form.eau} onChange={e => { set('eau', e.target.value); if (e.target.value === 'Non') set('eauDetail', '') }} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
-                <option value="Non" className="bg-gray-800">Non</option>
-                <option value="Oui" className="bg-gray-800">Oui</option>
-              </select>
-              {form.eau === 'Oui' && (
-                <textarea value={form.eauDetail} onChange={e => set('eauDetail', e.target.value)} rows={2} placeholder="Précisez le besoin en eau..." className="mt-2 w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] resize-none" />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex items-center justify-between pt-4 border-t border-white/10">
-        {isAdmin ? (
-          <button onClick={() => { onDelete(besoin.id); onClose() }} className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-red-400 text-sm font-medium hover:bg-red-500/15 transition-colors">
-            <Trash2 size={14} />
-            Supprimer
-          </button>
-        ) : <div />}
-        <div className="flex gap-3">
-          <button onClick={() => { resetForm(besoin); onClose() }} className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">Fermer</button>
-          <button onClick={handleSave} className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity" style={{ backgroundColor: COLORS.accent }}>Valider</button>
-        </div>
-      </div>
-    </Modal>
-  )
-}
-
-/* ─── App ─── */
 export default function App() {
-  const [besoins, setBesoins] = useState(() => loadFromStorage('nox_besoins', SAMPLE_DATA))
+  const [appLoading, setAppLoading] = useState(true)
   const [activeNav, setActiveNav] = useState('general')
   const [showNew, setShowNew] = useState(false)
   const [selectedBesoin, setSelectedBesoin] = useState(null)
@@ -444,18 +21,72 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortKey, setSortKey] = useState(null)
   const [sortDir, setSortDir] = useState('asc')
-  const [adminUser, setAdminUser] = useState(() => loadFromStorage('nox_admin', null))
-  const [showLogin, setShowLogin] = useState(false)
-  const [accounts, setAccounts] = useState(() => loadFromStorage('nox_accounts', DEFAULT_ACCOUNTS))
-  const isAdmin = !!adminUser
+  const [showFestivalSelect, setShowFestivalSelect] = useState(false)
+  const [appVisible, setAppVisible] = useState(false)
 
-  useEffect(() => { saveToStorage('nox_besoins', besoins) }, [besoins])
-  useEffect(() => { saveToStorage('nox_accounts', accounts) }, [accounts])
-  useEffect(() => { saveToStorage('nox_admin', adminUser) }, [adminUser])
+  // Fix #14 — Toast system
+  const [toast, setToast] = useState(null)
+  const toastTimerRef = useRef(null)
+  const showToast = useCallback((message, type = 'error') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToast({ message, type })
+    toastTimerRef.current = setTimeout(() => setToast(null), 3500)
+  }, [])
 
-  const addAccount = (account) => {
-    setAccounts(prev => [...prev, account])
-  }
+  // Auth Supabase
+  const { user, isAdmin, isEditor, signIn, signUp, signOut, loadRole } = useAuth()
+
+  // Festivals accessibles à l'utilisateur connecté
+  const { festivals, activeFestival, selectedId, selectFestival, loadingFestivals } = useFestival(user?.id)
+
+  // Fix #5 — Reset immédiat du rôle quand le festival change
+  useEffect(() => {
+    loadRole(null, null)
+  }, [selectedId, loadRole])
+
+  // Fix #5 — Charge le nouveau rôle
+  useEffect(() => {
+    if (user?.id && selectedId) loadRole(user.id, selectedId)
+  }, [user?.id, selectedId, loadRole])
+
+  // Fix #7 & #12 — Ouvre auto le sélecteur de festival au login si != 1 festival dispo
+  useEffect(() => {
+    if (user && !loadingFestivals && festivals.length !== 1 && !selectedId) {
+      setShowFestivalSelect(true)
+    }
+  }, [user?.id, loadingFestivals, festivals.length, selectedId])
+
+  // Fix #13 — Reset des états locaux à la déconnexion
+  useEffect(() => {
+    if (!user) {
+      setFilterPole(null)
+      setSearchQuery('')
+      setSelectedBesoin(null)
+      setSortKey(null)
+      setSortDir('asc')
+      setActiveNav('general')
+      setShowNew(false)
+    }
+  }, [user])
+
+  // Fix #23 — Fondu d'entrée quand l'app devient visible (après login)
+  useEffect(() => {
+    if (user && !appLoading) {
+      // requestAnimationFrame garantit que le DOM est prêt avant de déclencher la transition
+      const raf = requestAnimationFrame(() => setAppVisible(true))
+      return () => cancelAnimationFrame(raf)
+    } else {
+      setAppVisible(false)
+    }
+  }, [user?.id, appLoading])
+
+  // Besoins avec sync temps réel (activé seulement si connecté + festival sélectionné)
+  const {
+    besoins,
+    addBesoin: addBesoinDB,
+    updateBesoin: updateBesoinDB,
+    deleteBesoin: deleteBesoinDB,
+  } = useBesoins({ enabled: !!user && !!selectedId, festivalId: selectedId ?? undefined })
 
   const counts = useMemo(() => {
     const map = {}
@@ -464,7 +95,12 @@ export default function App() {
     return map
   }, [besoins])
 
-  const SORT_KEYS = { 'Pôle': 'pole', 'Date': 'date', 'Désignation': 'designation', 'Quantité': 'quantite', 'Usage prévu': 'usage', 'Statut': 'statut' }
+  // Fix #19 — Ferme la modal de détail si le besoin affiché est supprimé via Realtime
+  useEffect(() => {
+    if (selectedBesoin && !besoins.find(b => b.id === selectedBesoin.id)) {
+      setSelectedBesoin(null)
+    }
+  }, [besoins, selectedBesoin])
 
   const handleSort = (header) => {
     const key = SORT_KEYS[header]
@@ -476,12 +112,13 @@ export default function App() {
     }
   }
 
+  // Fix #3 — nullish coalescing on designation/usage/pole
   const filtered = useMemo(() => {
     let list = besoins.filter(b => {
       if (filterPole && b.pole !== filterPole) return false
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
-        return b.designation.toLowerCase().includes(q) || b.usage.toLowerCase().includes(q) || b.pole.toLowerCase().includes(q)
+        return (b.designation ?? '').toLowerCase().includes(q) || (b.usage ?? '').toLowerCase().includes(q) || (b.pole ?? '').toLowerCase().includes(q)
       }
       return true
     })
@@ -498,231 +135,88 @@ export default function App() {
     return list
   }, [besoins, filterPole, searchQuery, sortKey, sortDir])
 
-  const addBesoin = (data) => {
-    setBesoins(prev => [{ ...data, id: Date.now() }, ...prev])
+  // Fix #14 — showToast on error
+  const addBesoin = async (data) => {
+    const { error } = await addBesoinDB(data)
+    if (error) {
+      console.error('[App] addBesoin failed:', error)
+      showToast('Erreur lors de la sauvegarde', 'error')
+    }
   }
 
-  const updateBesoin = (updated) => {
-    setBesoins(prev => prev.map(b => b.id === updated.id ? updated : b))
+  const updateBesoin = async (updated) => {
+    const { error } = await updateBesoinDB(updated)
+    if (error) {
+      console.error('[App] updateBesoin failed:', error)
+      showToast('Erreur lors de la sauvegarde', 'error')
+    }
   }
 
-  const deleteBesoin = (id) => {
-    setBesoins(prev => prev.filter(b => b.id !== id))
+  const deleteBesoin = async (id) => {
+    const { error } = await deleteBesoinDB(id)
+    if (error) {
+      console.error('[App] deleteBesoin failed:', error)
+      showToast('Erreur lors de la sauvegarde', 'error')
+    }
+  }
+
+  // Fix #22 — wrap onDone in useCallback
+  const handleLoadingDone = useCallback(() => setAppLoading(false), [])
+
+  // Loading screen shown once on first mount
+  if (appLoading) {
+    return <LoadingScreen onDone={handleLoadingDone} />
+  }
+
+  // Fix #18 — Not authenticated — show full-screen login page only (no duplicate ModalLogin)
+  if (!user) {
+    return <LoginPage onSignIn={signIn} onSignUp={signUp} />
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg text-white shadow-lg"
-        style={{ backgroundColor: COLORS.sidebar }}
-      >
-        <Menu size={22} />
-      </button>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{
+        fontFamily: "'Inter', system-ui, sans-serif",
+        opacity: appVisible ? 1 : 0,
+        transition: 'opacity 0.4s ease',
+      }}
+    >
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        activeFestival={activeFestival}
+        loadingFestivals={loadingFestivals}
+        user={user}
+        onFestivalClick={() => setShowFestivalSelect(true)}
+      />
 
-      {/* Sidebar overlay mobile */}
-      {sidebarOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
-      )}
+      {/* Fix #21 — isEditor passed as prop (already present) */}
+      <DashboardPage
+        user={user}
+        isAdmin={isAdmin}
+        isEditor={isEditor}
+        signOut={signOut}
+        activeFestival={activeFestival}
+        selectedId={selectedId}
+        besoins={besoins}
+        filtered={filtered}
+        counts={counts}
+        filterPole={filterPole}
+        setFilterPole={setFilterPole}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        handleSort={handleSort}
+        setSelectedBesoin={setSelectedBesoin}
+        setShowNew={setShowNew}
+        setShowFestivalSelect={setShowFestivalSelect}
+      />
 
-      {/* SIDEBAR */}
-      <aside
-        className={`fixed md:static z-40 top-0 left-0 h-full w-64 flex-shrink-0 flex flex-col transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ backgroundColor: COLORS.sidebar }}
-      >
-        <div className="p-6 pb-2">
-          <h1 className="text-xl font-bold text-white tracking-wide">Nox Logistique</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Festival Management</p>
-        </div>
-        <nav className="flex-1 px-3 mt-4">
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => { setActiveNav(item.id); setSidebarOpen(false) }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all mb-1 ${activeNav === item.id ? 'text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
-              style={activeNav === item.id ? { backgroundColor: COLORS.accent + '20', color: '#fff', borderLeft: `3px solid ${COLORS.accent}` } : {}}
-            >
-              <item.icon size={18} />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="p-4 text-xs text-gray-600">v1.0</div>
-      </aside>
-
-      {/* ZONE PRINCIPALE */}
-      <main className="flex-1 overflow-y-auto" style={{ backgroundColor: COLORS.bg }}>
-        <div className="p-4 md:p-8 pt-16 md:pt-8 max-w-7xl mx-auto">
-
-          {/* Barre du haut avec bouton Gestion */}
-          <div className="flex justify-end mb-4">
-            {isAdmin ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium" style={{ color: COLORS.textDark }}>
-                  <span className="text-gray-500">Connecté :</span> {adminUser}
-                </span>
-                <button
-                  onClick={() => setAdminUser(null)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  <LogOut size={15} />
-                  Déconnexion
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowLogin(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: COLORS.sidebar }}
-              >
-                <Lock size={15} />
-                Connexion
-              </button>
-            )}
-          </div>
-
-          {/* Cartes résumé */}
-          <div className="flex gap-4 overflow-x-auto pb-2 mb-3">
-            <button
-              onClick={() => setFilterPole(null)}
-              className="flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] transition-all cursor-pointer hover:scale-[1.02]"
-              style={{
-                backgroundColor: COLORS.card,
-                borderLeft: `3px solid ${COLORS.accent}`,
-                outline: filterPole === null ? `2px solid ${COLORS.accent}` : 'none',
-              }}
-            >
-              <div className="p-2 rounded-lg" style={{ backgroundColor: COLORS.accent + '22' }}>
-                <ClipboardList size={20} style={{ color: COLORS.accent }} />
-              </div>
-              <div className="text-left">
-                <p className="text-xs text-gray-400 whitespace-nowrap">Besoin</p>
-                <p className="text-2xl font-bold text-white">{besoins.length}</p>
-              </div>
-            </button>
-            {POLES.map(pole => {
-              const active = filterPole === pole.label
-              return (
-                <button
-                  key={pole.label}
-                  onClick={() => setFilterPole(active ? null : pole.label)}
-                  className="flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] transition-all cursor-pointer hover:scale-[1.02]"
-                  style={{
-                    backgroundColor: COLORS.card,
-                    borderLeft: `3px solid ${pole.color}`,
-                    outline: active ? `2px solid ${pole.color}` : 'none',
-                  }}
-                >
-                  <div className="p-2 rounded-lg" style={{ backgroundColor: pole.color + '22' }}>
-                    <pole.icon size={20} style={{ color: pole.color }} />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs text-gray-400 whitespace-nowrap">{pole.label}</p>
-                    <p className="text-2xl font-bold text-white">{counts[pole.label]}</p>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Header tableau */}
-          <div className="mb-4">
-            <h2 className="text-lg font-bold mb-2" style={{ color: COLORS.textDark }}>
-              Besoins {filterPole && <span className="text-sm font-normal text-gray-500">— {filterPole}</span>}
-            </h2>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <button
-                onClick={() => setShowNew(true)}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity flex-shrink-0"
-                style={{ backgroundColor: COLORS.accent }}
-              >
-                <Plus size={18} />
-                Nouveau Besoin
-              </button>
-              <div className="relative flex-1">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher un besoin..."
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
-                  style={{ color: COLORS.textDark }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Tableau desktop */}
-          <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white">
-            <table className="w-full" style={{ fontSize: '13px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#2D2650' }}>
-                  {['Pôle', 'Date', 'Désignation', 'Quantité', 'Statut'].map(h => (
-                    <th
-                      key={h}
-                      onClick={() => handleSort(h)}
-                      className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-2.5 cursor-pointer select-none hover:text-white transition-colors"
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        {h}
-                        {sortKey === SORT_KEYS[h] && (sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((b, i) => (
-                  <tr
-                    key={b.id}
-                    onClick={() => setSelectedBesoin(b)}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100"
-                    style={i % 2 === 0 ? {} : { backgroundColor: '#FAFAF8' }}
-                  >
-                    <td className="px-4 py-1.5"><PoleBadge pole={b.pole} /></td>
-                    <td className="px-4 py-1.5" style={{ color: COLORS.textDark }}>{formatDate(b.date)}</td>
-                    <td className="px-4 py-1.5 font-medium" style={{ color: COLORS.textDark }}>{b.designation}</td>
-                    <td className="px-4 py-1.5 text-center" style={{ color: COLORS.textDark }}>{b.quantite}</td>
-                    <td className="px-4 py-1.5"><StatutBadge statut={b.statut} /></td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={5} className="text-center py-12 text-gray-400">Aucun besoin trouvé</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Cartes mobile */}
-          <div className="md:hidden space-y-3">
-            {filtered.map(b => (
-              <div
-                key={b.id}
-                onClick={() => setSelectedBesoin(b)}
-                className="rounded-xl p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-transform bg-white"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <PoleBadge pole={b.pole} />
-                  <StatutBadge statut={b.statut} />
-                </div>
-                <h3 className="text-sm font-bold mb-1" style={{ color: COLORS.textDark }}>{b.designation}</h3>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{formatDate(b.date)}</span>
-                  <span>Qté : {b.quantite}</span>
-                </div>
-                {b.usage && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{b.usage}</p>}
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="text-center py-12 text-gray-400">Aucun besoin trouvé</div>
-            )}
-          </div>
-        </div>
-      </main>
-
-      {/* Modales */}
+      {/* Modals */}
       <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} />
       <ModalDetail
         open={!!selectedBesoin}
@@ -731,14 +225,38 @@ export default function App() {
         onUpdate={updateBesoin}
         onDelete={deleteBesoin}
         isAdmin={isAdmin}
+        isEditor={isEditor}
       />
-      <ModalLogin
-        open={showLogin}
-        onClose={() => setShowLogin(false)}
-        onLogin={setAdminUser}
-        accounts={accounts}
-        onRegister={addAccount}
+      <ModalFestivalSelect
+        open={showFestivalSelect}
+        onClose={() => setShowFestivalSelect(false)}
+        festivals={festivals}
+        selectedId={selectedId}
+        onSelect={selectFestival}
       />
+
+      {/* Fix #14 — Toast notifications */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 9999,
+            padding: '12px 20px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+            background: toast.type === 'error' ? '#DC2626' : '#059669',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: 500,
+            maxWidth: '320px',
+            pointerEvents: 'none',
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   )
 }
