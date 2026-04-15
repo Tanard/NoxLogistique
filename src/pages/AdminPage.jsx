@@ -6,9 +6,9 @@ import { Search, UserPlus, Users, RefreshCw } from 'lucide-react'
 
 // Configuration visuelle des rôles
 export const ROLE_CONFIG = {
-  admin:        { label: 'Admin',        bg: '#7C3AED20', text: '#7C3AED', border: '#7C3AED50' },
-  pole_manager: { label: 'Responsable',  bg: '#F472B620', text: '#DB2777', border: '#F472B650' },
-  viewer:       { label: 'Viewer',       bg: '#6B728015', text: '#6B7280', border: '#6B728040' },
+  admin:        { label: 'Admin',        bg: '#EF444420', text: '#EF4444', border: '#EF444460' },
+  pole_manager: { label: 'Responsable',  bg: '#F9731620', text: '#EA580C', border: '#F9731660' },
+  viewer:       { label: 'Viewer',       bg: '#22C55E20', text: '#16A34A', border: '#22C55E60' },
 }
 
 /** Retourne le rôle le plus élevé parmi les memberships d'un utilisateur */
@@ -70,37 +70,37 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
               {loading ? 'Chargement…' : `${users.length} utilisateur${users.length > 1 ? 's' : ''} enregistré${users.length > 1 ? 's' : ''}`}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={reload}
-              disabled={loading}
-              className="p-2.5 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-gray-800 hover:border-gray-300 transition-colors disabled:opacity-40"
-              title="Rafraîchir"
-            >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            </button>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity"
-              style={{ backgroundColor: COLORS.accent }}
-            >
-              <UserPlus size={16} />
-              Créer un utilisateur
-            </button>
-          </div>
+          <button
+            onClick={reload}
+            disabled={loading}
+            className="p-2.5 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-gray-800 hover:border-gray-300 transition-colors disabled:opacity-40"
+            title="Rafraîchir"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
 
-        {/* ── Barre de recherche ───────────────────────────────────────────── */}
-        <div className="relative mb-5">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Rechercher par email ou nom…"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
-            style={{ color: COLORS.textDark }}
-          />
+        {/* ── Barre de recherche + bouton créer ────────────────────────────── */}
+        <div className="flex items-center gap-2 mb-5">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity flex-shrink-0"
+            style={{ backgroundColor: COLORS.accent }}
+          >
+            <UserPlus size={16} />
+            Créer
+          </button>
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Rechercher par email ou nom…"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+              style={{ color: COLORS.textDark }}
+            />
+          </div>
         </div>
 
         {/* ── Tableau desktop ──────────────────────────────────────────────── */}

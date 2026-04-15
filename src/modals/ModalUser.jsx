@@ -12,22 +12,29 @@ const ROLES = ['admin', 'pole_manager', 'viewer']
 // ─────────────────────────────────────────────────────────────────────────────
 function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
   const rc = ROLE_CONFIG[membership.role] ?? ROLE_CONFIG.viewer
+
+  const cycleRole = () => {
+    const idx = ROLES.indexOf(membership.role)
+    const nextRole = ROLES[(idx + 1) % ROLES.length]
+    onRoleChange(nextRole)
+  }
+
   return (
     <div className="flex items-center justify-between gap-3 py-2.5 border-b border-white/5 last:border-0">
       <span className="text-sm text-white flex-1 truncate">{membership.festivalName}</span>
-      <select
-        value={membership.role}
-        onChange={e => onRoleChange(e.target.value)}
+      <button
+        onClick={cycleRole}
         disabled={saving}
-        className="rounded-lg border border-white/20 bg-white/10 text-white px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#7C3AED] disabled:opacity-50 cursor-pointer"
-        style={{ color: rc.text }}
+        className="px-2.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer hover:opacity-80 disabled:opacity-40"
+        style={{
+          backgroundColor: rc.bg,
+          color: rc.text,
+          borderColor: rc.border,
+        }}
+        title="Cliquez pour changer le rôle"
       >
-        {ROLES.map(r => (
-          <option key={r} value={r} className="bg-gray-900 text-white">
-            {ROLE_CONFIG[r]?.label ?? r}
-          </option>
-        ))}
-      </select>
+        {rc.label}
+      </button>
       <button
         onClick={onRemove}
         disabled={saving}
@@ -279,7 +286,7 @@ export function ModalUser({
             {availableFestivals.length > 0 && (
               <div className="mt-4 pt-4 border-t border-white/10">
                 <p className="text-xs text-gray-400 mb-2 font-medium">Ajouter un accès</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-2">
                   <select
                     value={addFestivalId}
                     onChange={e => setAddFestivalId(e.target.value)}
@@ -288,15 +295,6 @@ export function ModalUser({
                     <option value="" className="bg-gray-900">— Festival —</option>
                     {availableFestivals.map(f => (
                       <option key={f.id} value={f.id} className="bg-gray-900">{f.name}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={addFestivalRole}
-                    onChange={e => setAddFestivalRole(e.target.value)}
-                    className="rounded-lg border border-white/20 bg-white/10 text-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-                  >
-                    {ROLES.map(r => (
-                      <option key={r} value={r} className="bg-gray-900">{ROLE_CONFIG[r]?.label ?? r}</option>
                     ))}
                   </select>
                   <button
@@ -308,6 +306,28 @@ export function ModalUser({
                   >
                     <Plus size={16} />
                   </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">Rôle :</span>
+                  {ROLES.map(r => {
+                    const rc = ROLE_CONFIG[r]
+                    const isSelected = addFestivalRole === r
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => setAddFestivalRole(r)}
+                        className="px-2 py-1 rounded-full text-xs font-semibold border transition-all"
+                        style={{
+                          backgroundColor: isSelected ? rc.bg : 'transparent',
+                          color: rc.text,
+                          borderColor: rc.border,
+                          opacity: isSelected ? 1 : 0.5,
+                        }}
+                      >
+                        {rc.label}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
