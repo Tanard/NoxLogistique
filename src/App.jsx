@@ -50,21 +50,31 @@ export default function App() {
     if (user?.id && selectedId) loadRole(user.id, selectedId)
   }, [user?.id, selectedId, loadRole])
 
-  // Fix #7 & #12 & #26 — Ouvre auto le sélecteur de festival au login si != 1 festival dispo
-  // Fix #26 : détecter un NOUVEAU login (user.id change), pas une restauration de session (F5)
+  // Fix #7 & #12 & #26 — Ouvre le sélecteur de festival au PREMIER login seulement.
+  // La clé : vérifier directement localStorage plutôt que selectedId.
+  // selectedId est temporairement null au F5 (avant que useFestival le restaure),
+  // ce qui causait l'ouverture intempestive du modal à chaque rechargement.
   const prevUserIdRef = useRef(null)
   useEffect(() => {
-    if (user?.id) {
-      // Nouveau login : user.id a changé (ou c'est la première fois qu'on le voit)
-      if (prevUserIdRef.current !== user.id && !loadingFestivals && festivals.length !== 1 && !selectedId) {
+    if (!user?.id) {
+      prevUserIdRef.current = null
+      return
+    }
+    // Attendre que les festivals soient réellement chargés
+    if (loadingFestivals || festivals.length === 0) return
+
+    // C'est un nouveau login si user.id vient de changer
+    if (prevUserIdRef.current !== user.id) {
+      prevUserIdRef.current = user.id
+      // Ouvrir le modal uniquement s'il y a plusieurs festivals
+      // ET qu'aucun festival n'a été sauvegardé en localStorage (vrai premier choix)
+      let hasSavedFestival = false
+      try { hasSavedFestival = !!localStorage.getItem('logisticore_festival_id') } catch {}
+      if (festivals.length !== 1 && !hasSavedFestival) {
         setShowFestivalSelect(true)
       }
-      prevUserIdRef.current = user.id
-    } else {
-      // Logout
-      prevUserIdRef.current = null
     }
-  }, [user?.id, loadingFestivals, festivals.length, selectedId])
+  }, [user?.id, loadingFestivals, festivals.length])
 
   // Fix #13 — Reset des états locaux à la déconnexion
   useEffect(() => {
