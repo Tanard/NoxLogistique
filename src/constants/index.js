@@ -5,6 +5,7 @@ import {
   Music,
   ShieldCheck,
   Truck,
+  Settings,
 } from 'lucide-react'
 
 export const COLORS = {
@@ -30,9 +31,8 @@ export const STATUTS = [
 ]
 
 export const NAV_ITEMS = [
-  { label: 'Général', icon: LayoutDashboard, id: 'general' },
-  // Ajouter d'autres onglets ici :
-  // { label: 'Planning', icon: Calendar, id: 'planning' },
+  { label: 'Administration', icon: Settings,       id: 'admin',   adminOnly: true },
+  { label: 'Liste des Besoins', icon: LayoutDashboard, id: 'general' },
 ]
 
 export const SORT_KEYS = {

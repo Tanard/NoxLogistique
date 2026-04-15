@@ -1,7 +1,7 @@
 import { Calendar, Menu } from 'lucide-react'
 import { NAV_ITEMS, COLORS } from '../constants'
 
-export function Sidebar({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, activeFestival, loadingFestivals, user, onFestivalClick }) {
+export function Sidebar({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, activeFestival, loadingFestivals, user, isAdmin, onFestivalClick }) {
   return (
     <>
       {/* Mobile hamburger */}
@@ -34,7 +34,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, 
           </button>
         </div>
         <nav className="flex-1 px-3 mt-4">
-          {NAV_ITEMS.map(item => (
+          {NAV_ITEMS.filter(item => !item.adminOnly || isAdmin).map(item => (
             <button
               key={item.id}
               onClick={() => { setActiveNav(item.id); setSidebarOpen(false) }}

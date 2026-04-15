@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage'
 import { ModalFestivalSelect } from './modals/ModalFestivalSelect'
 import { ModalNouveau } from './modals/ModalNouveau'
 import { ModalDetail } from './modals/ModalDetail'
+import AdminPage from './pages/AdminPage'
 
 export default function App() {
   const [appLoading, setAppLoading] = useState(true)
@@ -190,31 +191,43 @@ export default function App() {
         activeFestival={activeFestival}
         loadingFestivals={loadingFestivals}
         user={user}
+        isAdmin={isAdmin}
         onFestivalClick={() => setShowFestivalSelect(true)}
       />
 
+      {/* Onglet Administration (admin uniquement) */}
+      {activeNav === 'admin' && isAdmin && (
+        <AdminPage
+          isAdmin={isAdmin}
+          festivals={festivals}
+          showToast={showToast}
+        />
+      )}
+
       {/* Fix #21 — isEditor passed as prop (already present) */}
-      <DashboardPage
-        user={user}
-        isAdmin={isAdmin}
-        isEditor={isEditor}
-        signOut={signOut}
-        activeFestival={activeFestival}
-        selectedId={selectedId}
-        besoins={besoins}
-        filtered={filtered}
-        counts={counts}
-        filterPole={filterPole}
-        setFilterPole={setFilterPole}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        sortKey={sortKey}
-        sortDir={sortDir}
-        handleSort={handleSort}
-        setSelectedBesoin={setSelectedBesoin}
-        setShowNew={setShowNew}
-        setShowFestivalSelect={setShowFestivalSelect}
-      />
+      {activeNav !== 'admin' && (
+        <DashboardPage
+          user={user}
+          isAdmin={isAdmin}
+          isEditor={isEditor}
+          signOut={signOut}
+          activeFestival={activeFestival}
+          selectedId={selectedId}
+          besoins={besoins}
+          filtered={filtered}
+          counts={counts}
+          filterPole={filterPole}
+          setFilterPole={setFilterPole}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          handleSort={handleSort}
+          setSelectedBesoin={setSelectedBesoin}
+          setShowNew={setShowNew}
+          setShowFestivalSelect={setShowFestivalSelect}
+        />
+      )}
 
       {/* Modals */}
       <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} />
