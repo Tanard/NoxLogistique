@@ -364,7 +364,7 @@ export function ModalUser({
               </div>
             )}
 
-            {/* Reset mot de passe + Fermer */}
+            {/* Reset mot de passe + Valider */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSendReset}
@@ -378,9 +378,10 @@ export function ModalUser({
               </button>
               <button
                 onClick={onClose}
-                className="px-5 py-2 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors"
+                className="px-5 py-2 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: COLORS.accent }}
               >
-                Fermer
+                Valider
               </button>
             </div>
           </div>

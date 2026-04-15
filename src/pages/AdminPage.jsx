@@ -35,12 +35,54 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
   const [searchQuery, setSearchQuery]     = useState('')
   const [selectedUser, setSelectedUser]   = useState(null)
   const [showCreate, setShowCreate]       = useState(false)
+  const [festivalSort, setFestivalSort]   = useState('name')
+  const [festivalSortDir, setFestivalSortDir] = useState('asc')
 
   const {
     users, loading, reload,
     updateRole, addMembership, removeMembership,
     createUser, deleteUser, sendPasswordReset,
   } = useUsers({ enabled: isAdmin })
+
+  // Calcule les stats par festival
+  const festivalStats = festivals.map(f => {
+    const members = users.filter(u => u.memberships.some(m => m.festivalId === f.id))
+    const admins = members.filter(u => u.memberships.find(m => m.festivalId === f.id)?.role === 'admin')
+    const poleManagers = members.filter(u => u.memberships.find(m => m.festivalId === f.id)?.role === 'pole_manager')
+    return {
+      ...f,
+      memberCount: members.length,
+      adminCount: admins.length,
+      poleManagerCount: poleManagers.length,
+    }
+  })
+
+  // Tri des festivals
+  const sortedFestivals = [...festivalStats].sort((a, b) => {
+    let va, vb
+    if (festivalSort === 'name') {
+      va = (a.name ?? '').toLowerCase()
+      vb = (b.name ?? '').toLowerCase()
+    } else if (festivalSort === 'members') {
+      va = a.memberCount
+      vb = b.memberCount
+    } else if (festivalSort === 'admins') {
+      va = a.adminCount
+      vb = b.adminCount
+    }
+    if (va < vb) return festivalSortDir === 'asc' ? -1 : 1
+    if (va > vb) return festivalSortDir === 'asc' ? 1 : -1
+    return 0
+  })
+
+  const handleFestivalSort = (key) => {
+    if (festivalSort === key) {
+      setFestivalSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setFestivalSort(key)
+      setFestivalSortDir('asc')
+    }
+  }
 
   const filtered = users.filter(u => {
     if (!searchQuery) return true
@@ -78,6 +120,82 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
+        </div>
+
+        {/* ── Festivals ────────────────────────────────────────────────────── */}
+        <div className="mb-8">
+          <h3 className="text-lg font-bold mb-4" style={{ color: COLORS.textDark }}>Festivals</h3>
+
+          {/* Desktop table */}
+          <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white mb-4">
+            <table className="w-full" style={{ fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2D2650' }}>
+                  <th
+                    onClick={() => handleFestivalSort('name')}
+                    className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-white transition-colors select-none"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Festival
+                      {festivalSort === 'name' && (festivalSortDir === 'asc' ? '▲' : '▼')}
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleFestivalSort('members')}
+                    className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-white transition-colors select-none"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Membres
+                      {festivalSort === 'members' && (festivalSortDir === 'asc' ? '▲' : '▼')}
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleFestivalSort('admins')}
+                    className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3 cursor-pointer hover:text-white transition-colors select-none"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Admins
+                      {festivalSort === 'admins' && (festivalSortDir === 'asc' ? '▲' : '▼')}
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedFestivals.map((f, i) => (
+                  <tr
+                    key={f.id}
+                    className="hover:bg-purple-50 transition-colors border-b border-gray-100"
+                    style={i % 2 !== 0 ? { backgroundColor: '#FAFAF8' } : {}}
+                  >
+                    <td className="px-4 py-3">
+                      <p className="font-semibold" style={{ color: COLORS.textDark }}>{f.name}</p>
+                    </td>
+                    <td className="px-4 py-3 text-sm" style={{ color: COLORS.textDark }}>
+                      {f.memberCount} {f.memberCount > 1 ? 'utilisateurs' : 'utilisateur'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                        {f.adminCount}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {sortedFestivals.map(f => (
+              <div key={f.id} className="rounded-xl p-4 shadow-sm bg-white">
+                <p className="font-semibold text-sm mb-2" style={{ color: COLORS.textDark }}>{f.name}</p>
+                <div className="flex items-center justify-between text-xs text-gray-600">
+                  <span>{f.memberCount} utilisateur{f.memberCount > 1 ? 's' : ''}</span>
+                  <span className="text-red-700 font-medium">{f.adminCount} admin{f.adminCount > 1 ? 's' : ''}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── Barre de recherche + bouton créer ────────────────────────────── */}
@@ -250,7 +368,10 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           festivals={festivals}
           createUser={async (data) => {
             const res = await createUser(data)
-            if (!res.error) setShowCreate(false)
+            if (!res.error) {
+              await reload()
+              setShowCreate(false)
+            }
             return res
           }}
           showToast={showToast}
