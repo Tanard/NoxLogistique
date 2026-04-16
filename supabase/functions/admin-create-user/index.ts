@@ -9,18 +9,13 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// ── CORS : origines autorisées ───────────────────────────────────────────────
-const ALLOWED_ORIGINS: string[] = (
-  Deno.env.get('ALLOWED_ORIGINS') ?? 'http://localhost:5173'
-).split(',').map(o => o.trim()).filter(Boolean)
-
-function getCorsHeaders(origin: string | null): Record<string, string> {
-  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Vary': 'Origin',
-  }
+// ── CORS ─────────────────────────────────────────────────────────────────────
+// La sécurité réelle repose sur le check JWT + rôle admin dans la fonction.
+// CORS est ouvert (*) car les Edge Functions Supabase sont appelées avec
+// un JWT signé — un site tiers ne peut pas usurper une session valide.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 // ── Validation ───────────────────────────────────────────────────────────────
@@ -33,9 +28,6 @@ function isValidEmail(email: string): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
-  const origin = req.headers.get('Origin')
-  const corsHeaders = getCorsHeaders(origin)
-
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
