@@ -256,33 +256,14 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
           festivals={festivals}
-          updateRole={async (userId, festivalId, role) => {
-            const res = await updateRole(userId, festivalId, role)
-            // P2 — reload() retourne la liste fraîche → pas de lecture de closure stale
-            if (!res.error) {
-              const freshList = await reload()
-              const fresh = freshList?.find(u => u.id === userId)
-              if (fresh) setSelectedUser(fresh)
-            }
-            return res
-          }}
-          addMembership={async (userId, festivalId, role) => {
-            const res = await addMembership(userId, festivalId, role)
-            if (!res.error) {
-              const freshList = await reload()
-              const fresh = freshList?.find(u => u.id === userId)
-              if (fresh) setSelectedUser(fresh)
-            }
-            return res
-          }}
-          removeMembership={async (userId, festivalId) => {
-            const res = await removeMembership(userId, festivalId)
-            if (!res.error) {
-              const freshList = await reload()
-              const fresh = freshList?.find(u => u.id === userId)
-              if (fresh) setSelectedUser(fresh)
-            }
-            return res
+          updateRole={updateRole}
+          addMembership={addMembership}
+          removeMembership={removeMembership}
+          onSaved={async (userId) => {
+            // Appelé par ModalUser après handleSave — un seul reload pour toutes les modifs
+            const freshList = await reload()
+            const fresh = freshList?.find(u => u.id === userId)
+            if (fresh) setSelectedUser(fresh)
           }}
           deleteUser={async (userId) => {
             const res = await deleteUser(userId)

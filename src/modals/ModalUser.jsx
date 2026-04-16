@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Modal } from '../components/ui/Modal'
 import { PasswordInput } from '../components/ui/PasswordInput'
-import { ROLE_CONFIG } from '../constants'  // A1 — import depuis constants (plus de circular import)
+import { ROLE_CONFIG } from '../constants'
 import { COLORS } from '../constants'
 import { Trash2, Plus, Mail, UserCircle2, X } from 'lucide-react'
 
@@ -9,6 +9,7 @@ const ROLES = ['admin', 'pole_manager', 'viewer']
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sous-composant : ligne d'une appartenance festival
+// Travaille sur les données locales (pas de DB avant Valider)
 // ─────────────────────────────────────────────────────────────────────────────
 function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
   const rc = ROLE_CONFIG[membership.role] ?? ROLE_CONFIG.viewer
@@ -26,11 +27,7 @@ function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
         onClick={cycleRole}
         disabled={saving}
         className="px-2.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer hover:opacity-80 disabled:opacity-40"
-        style={{
-          backgroundColor: rc.bg,
-          color: rc.text,
-          borderColor: rc.border,
-        }}
+        style={{ backgroundColor: rc.bg, color: rc.text, borderColor: rc.border }}
         title="Cliquez pour changer le rôle"
       >
         {rc.label}
@@ -53,8 +50,10 @@ function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
 export function ModalUser({
   open, onClose, mode = 'edit',
   user, festivals = [],
-  // Opérations edit
+  // Opérations edit (mutations pures — pas de reload interne)
   updateRole, addMembership, removeMembership, deleteUser, sendPasswordReset,
+  // Appelé après sauvegarde réussie — AdminPage fait le reload + sync
+  onSaved,
   // Opération create
   createUser,
   showToast,
@@ -64,14 +63,20 @@ export function ModalUser({
   const [createError, setCreateError] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // ── État local des memberships (mode edit) ─────────────────────────────────
+  // Toutes les modifications (rôle, ajout, retrait) restent locales
+  // jusqu'au clic sur "Valider" — aucune requête DB avant ce moment.
+  const [localMemberships, setLocalMemberships] = useState([])
+  const originalRef = useRef([])  // snapshot au moment de l'ouverture pour le diff
+
   // ── État ajout festival ────────────────────────────────────────────────────
-  const [addFestivalId, setAddFestivalId]   = useState('')
+  const [addFestivalId, setAddFestivalId]     = useState('')
   const [addFestivalRole, setAddFestivalRole] = useState('viewer')
 
   // ── État confirmation suppression ─────────────────────────────────────────
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  // Reset à l'ouverture
+  // Reset complet à chaque ouverture / changement d'utilisateur
   useEffect(() => {
     if (open) {
       setCreateForm({ email: '', password: '', fullName: '' })
@@ -79,12 +84,39 @@ export function ModalUser({
       setConfirmDelete(false)
       setAddFestivalId('')
       setAddFestivalRole('viewer')
+      if (user) {
+        const copy = (user.memberships ?? []).map(m => ({ ...m }))
+        setLocalMemberships(copy)
+        originalRef.current = copy
+      }
     }
   }, [open, user?.id])
 
-  // Festivals disponibles pour l'ajout (exclut ceux où l'utilisateur est déjà)
-  const alreadyIn = new Set((user?.memberships ?? []).map(m => m.festivalId))
+  // Festivals disponibles pour l'ajout (basé sur l'état local, pas la DB)
+  const alreadyIn = new Set(localMemberships.map(m => m.festivalId))
   const availableFestivals = festivals.filter(f => !alreadyIn.has(f.id))
+
+  // ── Mutations locales (pas de DB) ──────────────────────────────────────────
+  const handleLocalRoleChange = (festivalId, newRole) => {
+    setLocalMemberships(prev =>
+      prev.map(m => m.festivalId === festivalId ? { ...m, role: newRole } : m)
+    )
+  }
+
+  const handleLocalRemove = (festivalId) => {
+    setLocalMemberships(prev => prev.filter(m => m.festivalId !== festivalId))
+  }
+
+  const handleLocalAdd = () => {
+    if (!addFestivalId) return
+    const festivalName = festivals.find(f => f.id === addFestivalId)?.name ?? '—'
+    setLocalMemberships(prev => [
+      ...prev,
+      { festivalId: addFestivalId, festivalName, role: addFestivalRole },
+    ])
+    setAddFestivalId('')
+    setAddFestivalRole('viewer')
+  }
 
   // ── Mode création ──────────────────────────────────────────────────────────
   const handleCreate = async () => {
@@ -106,45 +138,65 @@ export function ModalUser({
     }
   }
 
-  // ── Mode édition ───────────────────────────────────────────────────────────
-  const handleRoleChange = async (festivalId, newRole) => {
+  // ── Mode édition : sauvegarde diff au clic "Valider" ──────────────────────
+  const handleSave = async () => {
     setSaving(true)
     try {
-      const { error } = await updateRole(user.id, festivalId, newRole)
-      if (error) showToast?.('Erreur lors de la mise à jour du rôle', 'error')
-      else showToast?.('Rôle mis à jour', 'success')
-    } finally {
-      setSaving(false)
-    }
-  }
+      const original = originalRef.current
+      const current  = localMemberships
+      let hasError   = false
 
-  const handleRemoveMembership = async (festivalId) => {
-    setSaving(true)
-    try {
-      const { error } = await removeMembership(user.id, festivalId)
-      if (error) showToast?.('Erreur lors de la suppression', 'error')
-      else showToast?.('Accès retiré', 'success')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleAddMembership = async () => {
-    if (!addFestivalId) return
-    setSaving(true)
-    try {
-      const { error } = await addMembership(user.id, addFestivalId, addFestivalRole)
-      if (error) showToast?.('Erreur lors de l\'ajout', 'error')
-      else {
-        showToast?.('Accès accordé', 'success')
-        setAddFestivalId('')
-        setAddFestivalRole('viewer')
+      // Festivals retirés
+      for (const m of original) {
+        if (!current.find(c => c.festivalId === m.festivalId)) {
+          const { error } = await removeMembership(user.id, m.festivalId)
+          if (error) hasError = true
+        }
       }
+
+      // Festivals ajoutés
+      for (const m of current) {
+        if (!original.find(o => o.festivalId === m.festivalId)) {
+          const { error } = await addMembership(user.id, m.festivalId, m.role)
+          if (error) hasError = true
+        }
+      }
+
+      // Rôles modifiés
+      for (const m of current) {
+        const orig = original.find(o => o.festivalId === m.festivalId)
+        if (orig && orig.role !== m.role) {
+          const { error } = await updateRole(user.id, m.festivalId, m.role)
+          if (error) hasError = true
+        }
+      }
+
+      if (hasError) {
+        showToast?.('Certaines modifications n\'ont pas pu être enregistrées', 'error')
+      } else {
+        showToast?.('Modifications enregistrées', 'success')
+      }
+
+      onSaved?.(user.id)  // AdminPage recharge la liste et re-sync l'utilisateur sélectionné
+      onClose()
     } finally {
       setSaving(false)
     }
   }
 
+  // ── Suppression immédiate (action irréversible, pas de "Valider") ──────────
+  const handleDelete = async () => {
+    setSaving(true)
+    try {
+      const { error } = await deleteUser(user.id)
+      if (error) showToast?.('Erreur lors de la suppression', 'error')
+      else showToast?.('Utilisateur supprimé', 'success')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // ── Reset mot de passe (action immédiate) ──────────────────────────────────
   const handleSendReset = async () => {
     if (!user?.email || user.email === '—') return
     setSaving(true)
@@ -152,17 +204,6 @@ export function ModalUser({
       const { error } = await sendPasswordReset(user.email)
       if (error) showToast?.('Erreur lors de l\'envoi', 'error')
       else showToast?.('Email de réinitialisation envoyé', 'success')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDelete = async () => {
-    setSaving(true)
-    try {
-      const { error } = await deleteUser(user.id)
-      if (error) showToast?.('Erreur lors de la suppression', 'error')
-      else showToast?.('Utilisateur supprimé', 'success')
     } finally {
       setSaving(false)
     }
@@ -260,23 +301,23 @@ export function ModalUser({
             </div>
           </div>
 
-          {/* ── Accès festivals ── */}
+          {/* ── Accès festivals (état local) ── */}
           <div className="rounded-xl p-4 mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
             <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">
               Accès festivals
             </h3>
 
-            {user.memberships.length === 0 ? (
+            {localMemberships.length === 0 ? (
               <p className="text-sm text-gray-500 italic py-2">Aucun accès festival attribué</p>
             ) : (
               <div>
-                {user.memberships.map(m => (
+                {localMemberships.map(m => (
                   <MembershipRow
                     key={m.festivalId}
                     membership={m}
                     saving={saving}
-                    onRoleChange={role => handleRoleChange(m.festivalId, role)}
-                    onRemove={() => handleRemoveMembership(m.festivalId)}
+                    onRoleChange={newRole => handleLocalRoleChange(m.festivalId, newRole)}
+                    onRemove={() => handleLocalRemove(m.festivalId)}
                   />
                 ))}
               </div>
@@ -298,7 +339,7 @@ export function ModalUser({
                     ))}
                   </select>
                   <button
-                    onClick={handleAddMembership}
+                    onClick={handleLocalAdd}
                     disabled={!addFestivalId || saving}
                     className="p-1.5 rounded-lg text-white hover:opacity-80 transition-opacity disabled:opacity-40"
                     style={{ backgroundColor: COLORS.accent }}
@@ -335,7 +376,7 @@ export function ModalUser({
 
           {/* ── Actions ── */}
           <div className="flex items-center justify-between pt-4 border-t border-white/10">
-            {/* Suppression */}
+            {/* Suppression (immédiate et irréversible) */}
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
@@ -364,7 +405,7 @@ export function ModalUser({
               </div>
             )}
 
-            {/* Reset mot de passe + Valider */}
+            {/* Reset mot de passe (immédiat) + Valider (enregistre tout) */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSendReset}
@@ -377,11 +418,12 @@ export function ModalUser({
                 Reset mdp
               </button>
               <button
-                onClick={onClose}
-                className="px-5 py-2 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-2 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ backgroundColor: COLORS.accent }}
               >
-                Valider
+                {saving ? 'Enregistrement…' : 'Valider'}
               </button>
             </div>
           </div>
