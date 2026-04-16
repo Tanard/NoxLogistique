@@ -120,6 +120,7 @@ export function ModalUser({
   const handleCreate = async () => {
     const { email, fullName } = createForm
     if (!email.trim()) return setCreateError('L\'email est obligatoire.')
+    if (!fullName.trim()) return setCreateError('Le nom et prénom sont obligatoires.')
     setCreateError('')
     setSaving(true)
     try {
@@ -234,7 +235,7 @@ export function ModalUser({
           </div>
 
           <div>
-            <label className="block text-xs text-gray-400 mb-1">Nom complet (optionnel)</label>
+            <label className="block text-xs text-gray-400 mb-1">Nom et prénom *</label>
             <input
               type="text"
               value={createForm.fullName}

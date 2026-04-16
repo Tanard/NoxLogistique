@@ -109,9 +109,9 @@ export function useUsers({ enabled = false }) {
   // ── Opérations auth (client → Edge Function → service_role) ───────────────
 
   /** Crée un utilisateur via la Edge Function admin-create-user */
-  const createUser = useCallback(async ({ email, password, fullName }) => {
+  const createUser = useCallback(async ({ email, fullName }) => {
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
-      body: { email, password, fullName },
+      body: { email, fullName },
     })
     return { data, error }
   }, [])
