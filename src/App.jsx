@@ -195,6 +195,19 @@ export default function App() {
     return <LoginPage onSignIn={signIn} onSignUp={signUp} />
   }
 
+  // Utilisateur connecté via un lien d'invitation ou de reset : doit définir son mot de passe
+  // avant d'accéder à quoi que ce soit. On ne rend rien d'autre derrière (sécurité + UX).
+  if (needsPasswordSet) {
+    return (
+      <ModalSetPassword
+        open
+        onDone={() => {}}
+        setPassword={setPassword}
+        isRecovery={isRecovery}
+      />
+    )
+  }
+
   return (
     <div
       className="flex h-screen overflow-hidden"
@@ -267,14 +280,6 @@ export default function App() {
         festivals={festivals}
         selectedId={selectedId}
         onSelect={selectFestival}
-      />
-
-      {/* Activation compte — affiché si l'utilisateur vient d'un lien d'invitation ou de reset */}
-      <ModalSetPassword
-        open={!!user && needsPasswordSet}
-        onDone={() => {}}
-        setPassword={setPassword}
-        isRecovery={isRecovery}
       />
 
       {/* Fix #14 — Toast notifications */}
