@@ -259,11 +259,11 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           updateRole={updateRole}
           addMembership={addMembership}
           removeMembership={removeMembership}
-          onSaved={async (userId) => {
-            // Appelé par ModalUser après handleSave — un seul reload pour toutes les modifs
-            const freshList = await reload()
-            const fresh = freshList?.find(u => u.id === userId)
-            if (fresh) setSelectedUser(fresh)
+          onSaved={async () => {
+            // Après "Valider", on recharge la liste en arrière-plan.
+            // On ne rappelle PAS setSelectedUser : le modal est déjà fermé via onClose
+            // (appeler setSelectedUser ici causait une réouverture du modal).
+            await reload()
           }}
           deleteUser={async (userId) => {
             const res = await deleteUser(userId)
