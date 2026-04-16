@@ -1,15 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useUsers } from '../hooks/useUsers'
 import { ModalUser } from '../modals/ModalUser'
-import { COLORS } from '../constants'
+import { ROLE_CONFIG, COLORS } from '../constants'  // A1 — import depuis constants (plus de circular import)
 import { Search, UserPlus, Users, RefreshCw } from 'lucide-react'
-
-// Configuration visuelle des rôles
-export const ROLE_CONFIG = {
-  admin:        { label: 'Admin',        bg: '#EF444420', text: '#EF4444', border: '#EF444460' },
-  pole_manager: { label: 'Responsable',  bg: '#F9731620', text: '#EA580C', border: '#F9731660' },
-  viewer:       { label: 'Viewer',       bg: '#22C55E20', text: '#16A34A', border: '#22C55E60' },
-}
 
 /** Retourne le rôle le plus élevé parmi les memberships d'un utilisateur */
 function getTopRole(memberships) {
@@ -43,32 +36,21 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
     createUser, deleteUser, sendPasswordReset,
   } = useUsers({ enabled: isAdmin })
 
-  // Calcule les stats par festival
-  const festivalStats = festivals.map(f => {
+  // P1 — useMemo : évite de recalculer à chaque render inutile
+  const festivalStats = useMemo(() => festivals.map(f => {
     const members = users.filter(u => u.memberships.some(m => m.festivalId === f.id))
     const admins = members.filter(u => u.memberships.find(m => m.festivalId === f.id)?.role === 'admin')
-    return {
-      ...f,
-      memberCount: members.length,
-      adminCount: admins.length,
-    }
-  })
+    return { ...f, memberCount: members.length, adminCount: admins.length }
+  }), [festivals, users])
 
-  // Filtre les users par festival sélectionné + recherche
-  const filtered = users.filter(u => {
+  // P1 — useMemo : filtre recalculé seulement quand les dépendances changent
+  const filtered = useMemo(() => users.filter(u => {
     if (selectedFestival && !u.memberships.some(m => m.festivalId === selectedFestival)) return false
     if (!searchQuery) return true
     const q = searchQuery.toLowerCase()
     return (u.email ?? '').toLowerCase().includes(q)
       || (u.fullName ?? '').toLowerCase().includes(q)
-  })
-
-  // Après une opération dans le modal, resync l'objet sélectionné
-  // pour que les données affichées restent à jour sans fermer le modal
-  const syncSelected = (userId) => {
-    const fresh = users.find(u => u.id === userId)
-    if (fresh) setSelectedUser(fresh)
-  }
+  }), [users, selectedFestival, searchQuery])
 
   return (
     <main className="flex-1 overflow-y-auto" style={{ backgroundColor: COLORS.bg }}>
@@ -276,25 +258,38 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           festivals={festivals}
           updateRole={async (userId, festivalId, role) => {
             const res = await updateRole(userId, festivalId, role)
-            await reload()
-            syncSelected(userId)
+            // P2 — reload() retourne la liste fraîche → pas de lecture de closure stale
+            if (!res.error) {
+              const freshList = await reload()
+              const fresh = freshList?.find(u => u.id === userId)
+              if (fresh) setSelectedUser(fresh)
+            }
             return res
           }}
           addMembership={async (userId, festivalId, role) => {
             const res = await addMembership(userId, festivalId, role)
-            await reload()
-            syncSelected(userId)
+            if (!res.error) {
+              const freshList = await reload()
+              const fresh = freshList?.find(u => u.id === userId)
+              if (fresh) setSelectedUser(fresh)
+            }
             return res
           }}
           removeMembership={async (userId, festivalId) => {
             const res = await removeMembership(userId, festivalId)
-            await reload()
-            syncSelected(userId)
+            if (!res.error) {
+              const freshList = await reload()
+              const fresh = freshList?.find(u => u.id === userId)
+              if (fresh) setSelectedUser(fresh)
+            }
             return res
           }}
           deleteUser={async (userId) => {
             const res = await deleteUser(userId)
-            if (!res.error) setSelectedUser(null)
+            if (!res.error) {
+              setSelectedUser(null)
+              await reload()
+            }
             return res
           }}
           sendPasswordReset={sendPasswordReset}
@@ -312,6 +307,7 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           festivals={festivals}
           createUser={async (data) => {
             const res = await createUser(data)
+            // P2 — reload explicite (useUsers.createUser ne recharge plus automatiquement)
             if (!res.error) {
               await reload()
               setShowCreate(false)

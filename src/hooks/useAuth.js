@@ -23,11 +23,20 @@ export function useAuth() {
     isMounted.current = true
 
     // 1. Lecture initiale de la session (cache local Supabase)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted.current) return
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    // C4 — .catch() ajouté : évite que l'app reste bloquée en état "loading"
+    //      si le réseau est KO ou si Supabase retourne une erreur inattendue
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!isMounted.current) return
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error('[useAuth] getSession failed:', err)
+        if (!isMounted.current) return
+        setUser(null)
+        setLoading(false)
+      })
 
     // 2. Écoute tous les changements d'état auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

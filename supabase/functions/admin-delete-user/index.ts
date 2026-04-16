@@ -3,15 +3,41 @@
 // La suppression cascade : profiles + festival_members sont supprimés automatiquement
 // grâce aux contraintes ON DELETE CASCADE définies dans le schéma SQL.
 // Protection : vérifie que l'appelant est admin et ne peut pas se supprimer lui-même.
+//
+// Correctifs sécurité :
+//   S1 : CORS restreint aux origines autorisées (plus de '*')
+//        → Configurer ALLOWED_ORIGINS dans les secrets Edge Functions Supabase
+//   S2 : Validation UUID du userId avant toute opération
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// ── CORS : origines autorisées ───────────────────────────────────────────────
+const ALLOWED_ORIGINS: string[] = (
+  Deno.env.get('ALLOWED_ORIGINS') ?? 'http://localhost:5173'
+).split(',').map(o => o.trim()).filter(Boolean)
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  }
 }
 
+// ── Validation ───────────────────────────────────────────────────────────────
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function isValidUUID(value: string): boolean {
+  return UUID_REGEX.test(value)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
+  const origin = req.headers.get('Origin')
+  const corsHeaders = getCorsHeaders(origin)
+
   // Gestion CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -56,12 +82,20 @@ Deno.serve(async (req) => {
       )
     }
 
-    // ── 3. Lecture du payload ────────────────────────────────────────────────
-    const { userId } = await req.json()
+    // ── 3. Lecture et validation du payload ──────────────────────────────────
+    const body = await req.json().catch(() => ({}))
+    const { userId } = body
 
-    if (!userId) {
+    if (!userId || typeof userId !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'userId is required' }),
+        JSON.stringify({ error: 'userId est obligatoire' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!isValidUUID(userId)) {
+      return new Response(
+        JSON.stringify({ error: 'userId invalide (format UUID attendu)' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -69,7 +103,7 @@ Deno.serve(async (req) => {
     // Protection : un admin ne peut pas se supprimer lui-même
     if (userId === caller.id) {
       return new Response(
-        JSON.stringify({ error: 'Cannot delete your own account' }),
+        JSON.stringify({ error: 'Impossible de supprimer votre propre compte' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

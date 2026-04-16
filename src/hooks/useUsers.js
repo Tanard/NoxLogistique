@@ -69,6 +69,7 @@ export function useUsers({ enabled = false }) {
 
     setUsers(list)
     setLoading(false)
+    return list  // P2 — retourne la liste fraîche pour que les callbacks puissent l'utiliser directement
   }, [enabled])
 
   useEffect(() => {
@@ -77,23 +78,24 @@ export function useUsers({ enabled = false }) {
 
   // ── Opérations membership (client → RLS admin) ────────────────────────────
 
+  // P2 — Ces fonctions sont des mutations pures : elles n'auto-rechargent plus.
+  // C'est l'appelant (AdminPage) qui appelle reload() explicitement,
+  // ce qui évite le double chargement réseau et permet d'utiliser la liste fraîche retournée.
   const updateRole = useCallback(async (userId, festivalId, newRole) => {
     const { error } = await supabase
       .from('festival_members')
       .update({ role: newRole })
       .eq('user_id', userId)
       .eq('festival_id', festivalId)
-    if (!error) await loadUsers()
     return { error }
-  }, [loadUsers])
+  }, [])
 
   const addMembership = useCallback(async (userId, festivalId, role = 'viewer') => {
     const { error } = await supabase
       .from('festival_members')
       .insert({ user_id: userId, festival_id: festivalId, role })
-    if (!error) await loadUsers()
     return { error }
-  }, [loadUsers])
+  }, [])
 
   const removeMembership = useCallback(async (userId, festivalId) => {
     const { error } = await supabase
@@ -101,9 +103,8 @@ export function useUsers({ enabled = false }) {
       .delete()
       .eq('user_id', userId)
       .eq('festival_id', festivalId)
-    if (!error) await loadUsers()
     return { error }
-  }, [loadUsers])
+  }, [])
 
   // ── Opérations auth (client → Edge Function → service_role) ───────────────
 
@@ -112,9 +113,8 @@ export function useUsers({ enabled = false }) {
     const { data, error } = await supabase.functions.invoke('admin-create-user', {
       body: { email, password, fullName },
     })
-    if (!error) await loadUsers()
     return { data, error }
-  }, [loadUsers])
+  }, [])
 
   /** Supprime un utilisateur via la Edge Function admin-delete-user */
   const deleteUser = useCallback(async (userId) => {

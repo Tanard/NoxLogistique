@@ -40,14 +40,15 @@ export default function App() {
   // Festivals accessibles à l'utilisateur connecté
   const { festivals, activeFestival, selectedId, selectFestival, loadingFestivals } = useFestival(user?.id)
 
-  // Fix #5 — Reset immédiat du rôle quand le festival change
+  // A2 — Fusion des deux effets loadRole en un seul :
+  // avant : 2 appels réseau distincts à chaque changement de festival
+  // après : 1 seul appel (reset si pas de contexte valide, chargement sinon)
   useEffect(() => {
-    loadRole(null, null)
-  }, [selectedId, loadRole])
-
-  // Fix #5 — Charge le nouveau rôle
-  useEffect(() => {
-    if (user?.id && selectedId) loadRole(user.id, selectedId)
+    if (user?.id && selectedId) {
+      loadRole(user.id, selectedId)
+    } else {
+      loadRole(null, null)
+    }
   }, [user?.id, selectedId, loadRole])
 
   // Fix #7 & #12 & #26 — Ouvre le sélecteur de festival au PREMIER login seulement.

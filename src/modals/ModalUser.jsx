@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '../components/ui/Modal'
 import { PasswordInput } from '../components/ui/PasswordInput'
-import { ROLE_CONFIG } from '../pages/AdminPage'
+import { ROLE_CONFIG } from '../constants'  // A1 — import depuis constants (plus de circular import)
 import { COLORS } from '../constants'
 import { Trash2, Plus, Mail, UserCircle2, X } from 'lucide-react'
 

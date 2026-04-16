@@ -2,15 +2,42 @@
 // Crée un utilisateur Supabase Auth avec un mot de passe défini par l'admin.
 // Nécessite la service_role key (jamais exposée côté client).
 // Protection : vérifie que l'appelant est bien admin avant d'agir.
+//
+// Correctifs sécurité :
+//   S1 : CORS restreint aux origines autorisées (plus de '*')
+//        → Configurer ALLOWED_ORIGINS dans les secrets Edge Functions Supabase
+//          Ex : https://mon-projet.vercel.app,http://localhost:5173
+//   S2 : Validation email (regex) + bornes mot de passe côté serveur
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// ── CORS : origines autorisées ───────────────────────────────────────────────
+const ALLOWED_ORIGINS: string[] = (
+  Deno.env.get('ALLOWED_ORIGINS') ?? 'http://localhost:5173'
+).split(',').map(o => o.trim()).filter(Boolean)
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  }
 }
 
+// ── Validation ───────────────────────────────────────────────────────────────
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email) && email.length <= 254
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
+  const origin = req.headers.get('Origin')
+  const corsHeaders = getCorsHeaders(origin)
+
   // Gestion CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -57,22 +84,42 @@ Deno.serve(async (req) => {
       )
     }
 
-    // ── 3. Lecture du payload ────────────────────────────────────────────────
-    const { email, password, fullName } = await req.json()
+    // ── 3. Lecture et validation du payload ──────────────────────────────────
+    const body = await req.json().catch(() => ({}))
+    const { email, password, fullName } = body
 
-    if (!email || !password) {
+    if (!email || typeof email !== 'string') {
       return new Response(
-        JSON.stringify({ error: 'email and password are required' }),
+        JSON.stringify({ error: 'email est obligatoire' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (password.length < 6) {
+    const cleanEmail = email.trim().toLowerCase()
+    if (!isValidEmail(cleanEmail)) {
       return new Response(
-        JSON.stringify({ error: 'Password must be at least 6 characters' }),
+        JSON.stringify({ error: 'Format d\'email invalide' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    if (!password || typeof password !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'password est obligatoire' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (password.length < 6 || password.length > 72) {
+      return new Response(
+        JSON.stringify({ error: 'Le mot de passe doit faire entre 6 et 72 caractères' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const cleanFullName = (typeof fullName === 'string' && fullName.trim())
+      ? fullName.trim().slice(0, 100)
+      : cleanEmail.split('@')[0]
 
     // ── 4. Création de l'utilisateur avec la service_role key ────────────────
     const supabaseAdmin = createClient(
@@ -82,11 +129,9 @@ Deno.serve(async (req) => {
     )
 
     const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       password,
-      user_metadata: {
-        full_name: fullName ?? email.split('@')[0],
-      },
+      user_metadata: { full_name: cleanFullName },
       email_confirm: true, // Pas besoin de confirmer l'email pour les comptes créés par un admin
     })
 

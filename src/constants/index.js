@@ -35,6 +35,14 @@ export const NAV_ITEMS = [
   { label: 'Liste des Besoins', icon: LayoutDashboard, id: 'general' },
 ]
 
+// A1 — ROLE_CONFIG déplacé ici depuis AdminPage.jsx pour éviter l'import circulaire
+// (ModalUser importait depuis AdminPage, créant une dépendance cyclique)
+export const ROLE_CONFIG = {
+  admin:        { label: 'Admin',        bg: '#EF444420', text: '#EF4444', border: '#EF444460' },
+  pole_manager: { label: 'Responsable',  bg: '#F9731620', text: '#EA580C', border: '#F9731660' },
+  viewer:       { label: 'Viewer',       bg: '#22C55E20', text: '#16A34A', border: '#22C55E60' },
+}
+
 export const SORT_KEYS = {
   'Pôle': 'pole',
   'Date': 'date',
