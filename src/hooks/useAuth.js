@@ -3,8 +3,14 @@ import { supabase } from '../lib/supabase'
 
 // Capture le type de flux (invite / recovery) avant que Supabase ne nettoie l'URL.
 // Doit être lu au niveau module (avant tout render React) pour ne pas rater le paramètre.
+// Supabase met le paramètre `type` dans le HASH (#access_token=...&type=invite),
+// pas dans les query params — on vérifie les deux pour couvrir tous les cas.
 const _initialFlowType = (() => {
-  try { return new URLSearchParams(window.location.search).get('type') } catch { return null }
+  try {
+    const hash   = new URLSearchParams(window.location.hash.substring(1))
+    const search = new URLSearchParams(window.location.search)
+    return hash.get('type') ?? search.get('type')
+  } catch { return null }
 })()
 
 export function useAuth() {
@@ -50,10 +56,17 @@ export function useAuth() {
       })
 
     // 2. Écoute tous les changements d'état auth
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted.current) return
       setUser(session?.user ?? null)
       if (!session) setRole(null)
+      // Quand l'utilisateur arrive via un lien d'invitation, Supabase émet
+      // un événement SIGNED_IN avec session.user.app_metadata.provider = 'email'
+      // et l'URL contient type=invite (déjà capturé dans _initialFlowType).
+      // On active aussi needsPasswordSet si l'event indique une invitation.
+      if (event === 'SIGNED_IN' && session?.user?.app_metadata?.invited_at) {
+        setNeedsPasswordSet(true)
+      }
     })
 
     return () => {
