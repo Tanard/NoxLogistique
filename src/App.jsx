@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage'
 import { ModalFestivalSelect } from './modals/ModalFestivalSelect'
 import { ModalNouveau } from './modals/ModalNouveau'
 import { ModalDetail } from './modals/ModalDetail'
+import { ModalSetPassword } from './modals/ModalSetPassword'
 import AdminPage from './pages/AdminPage'
 
 export default function App() {
@@ -35,7 +36,7 @@ export default function App() {
   }, [])
 
   // Auth Supabase
-  const { user, isAdmin, isEditor, signIn, signUp, signOut, loadRole } = useAuth()
+  const { user, isAdmin, isEditor, signIn, signUp, signOut, loadRole, needsPasswordSet, isRecovery, setPassword } = useAuth()
 
   // Festivals accessibles à l'utilisateur connecté
   const { festivals, activeFestival, selectedId, selectFestival, loadingFestivals } = useFestival(user?.id)
@@ -266,6 +267,14 @@ export default function App() {
         festivals={festivals}
         selectedId={selectedId}
         onSelect={selectFestival}
+      />
+
+      {/* Activation compte — affiché si l'utilisateur vient d'un lien d'invitation ou de reset */}
+      <ModalSetPassword
+        open={!!user && needsPasswordSet}
+        onDone={() => {}}
+        setPassword={setPassword}
+        isRecovery={isRecovery}
       />
 
       {/* Fix #14 — Toast notifications */}

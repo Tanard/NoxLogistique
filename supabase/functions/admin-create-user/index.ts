@@ -1,13 +1,11 @@
 // Edge Function : admin-create-user
-// Crée un utilisateur Supabase Auth avec un mot de passe défini par l'admin.
+// Invite un utilisateur par email — il reçoit un lien pour définir son propre mot de passe.
+// L'email est vérifié automatiquement lors de l'activation du compte.
 // Nécessite la service_role key (jamais exposée côté client).
-// Protection : vérifie que l'appelant est bien admin avant d'agir.
 //
 // Correctifs sécurité :
-//   S1 : CORS restreint aux origines autorisées (plus de '*')
-//        → Configurer ALLOWED_ORIGINS dans les secrets Edge Functions Supabase
-//          Ex : https://mon-projet.vercel.app,http://localhost:5173
-//   S2 : Validation email (regex) + bornes mot de passe côté serveur
+//   S1 : CORS restreint aux origines autorisées via ALLOWED_ORIGINS
+//   S2 : Validation email (regex) côté serveur
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -38,7 +36,6 @@ Deno.serve(async (req) => {
   const origin = req.headers.get('Origin')
   const corsHeaders = getCorsHeaders(origin)
 
-  // Gestion CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -53,14 +50,12 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Client avec le JWT de l'appelant (respecte les RLS)
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     )
 
-    // Vérifie l'identité de l'appelant
     const { data: { user: caller }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !caller) {
       return new Response(
@@ -86,7 +81,7 @@ Deno.serve(async (req) => {
 
     // ── 3. Lecture et validation du payload ──────────────────────────────────
     const body = await req.json().catch(() => ({}))
-    const { email, password, fullName } = body
+    const { email, fullName } = body  // plus de mot de passe — l'invité le définit lui-même
 
     if (!email || typeof email !== 'string') {
       return new Response(
@@ -103,41 +98,28 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (!password || typeof password !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'password est obligatoire' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (password.length < 6 || password.length > 72) {
-      return new Response(
-        JSON.stringify({ error: 'Le mot de passe doit faire entre 6 et 72 caractères' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     const cleanFullName = (typeof fullName === 'string' && fullName.trim())
       ? fullName.trim().slice(0, 100)
       : cleanEmail.split('@')[0]
 
-    // ── 4. Création de l'utilisateur avec la service_role key ────────────────
+    // ── 4. Invitation via la service_role key ────────────────────────────────
+    // inviteUserByEmail envoie un email avec un lien d'activation.
+    // L'invité clique, arrive sur l'app, définit son mot de passe.
+    // Son email est automatiquement vérifié lors de l'activation.
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
-    const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: cleanEmail,
-      password,
-      user_metadata: { full_name: cleanFullName },
-      email_confirm: true, // Pas besoin de confirmer l'email pour les comptes créés par un admin
-    })
+    const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      cleanEmail,
+      { data: { full_name: cleanFullName } }
+    )
 
-    if (createError) {
+    if (inviteError) {
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ error: inviteError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

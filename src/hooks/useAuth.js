@@ -1,11 +1,22 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
+// Capture le type de flux (invite / recovery) avant que Supabase ne nettoie l'URL.
+// Doit être lu au niveau module (avant tout render React) pour ne pas rater le paramètre.
+const _initialFlowType = (() => {
+  try { return new URLSearchParams(window.location.search).get('type') } catch { return null }
+})()
+
 export function useAuth() {
   const [user, setUser]       = useState(undefined) // undefined = pas encore chargé
   const [role, setRole]       = useState(null)
   const [loading, setLoading] = useState(true)
   const isMounted = useRef(true)
+
+  // true si l'utilisateur vient d'un lien d'invitation ou de réinitialisation
+  const [needsPasswordSet, setNeedsPasswordSet] = useState(
+    _initialFlowType === 'invite' || _initialFlowType === 'recovery'
+  )
 
   // Charge le rôle depuis festival_members pour un festivalId donné
   const loadRole = useCallback(async (userId, festivalId) => {
@@ -68,6 +79,13 @@ export function useAuth() {
     return { data, error }
   }, [])
 
+  // Définit le mot de passe de l'utilisateur connecté (flux invite / recovery)
+  const setPassword = useCallback(async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (!error) setNeedsPasswordSet(false)
+    return { error }
+  }, [])
+
   const signOut = useCallback(async () => {
     // Clear l'état React immédiatement pour une UX instantanée
     setUser(null)
@@ -83,12 +101,15 @@ export function useAuth() {
   return {
     user: user === undefined ? null : user,
     role,
-    isAdmin:  role === 'admin',
-    isEditor: role === 'admin' || role === 'pole_manager',
-    loading:  loading || user === undefined,
+    isAdmin:       role === 'admin',
+    isEditor:      role === 'admin' || role === 'pole_manager',
+    loading:       loading || user === undefined,
+    needsPasswordSet,
+    isRecovery:    _initialFlowType === 'recovery',
     loadRole,
     signIn,
     signUp,
     signOut,
+    setPassword,
   }
 }

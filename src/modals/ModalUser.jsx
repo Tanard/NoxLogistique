@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Modal } from '../components/ui/Modal'
-import { PasswordInput } from '../components/ui/PasswordInput'
-import { ROLE_CONFIG } from '../constants'
-import { COLORS } from '../constants'
+import { ROLE_CONFIG, COLORS } from '../constants'
 import { Trash2, Plus, Mail, UserCircle2, X } from 'lucide-react'
 
 const ROLES = ['admin', 'pole_manager', 'viewer']
@@ -59,7 +57,7 @@ export function ModalUser({
   showToast,
 }) {
   // ── État formulaire création ───────────────────────────────────────────────
-  const [createForm, setCreateForm] = useState({ email: '', password: '', fullName: '' })
+  const [createForm, setCreateForm] = useState({ email: '', fullName: '' })
   const [createError, setCreateError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -79,7 +77,7 @@ export function ModalUser({
   // Reset complet à chaque ouverture / changement d'utilisateur
   useEffect(() => {
     if (open) {
-      setCreateForm({ email: '', password: '', fullName: '' })
+      setCreateForm({ email: '', fullName: '' })
       setCreateError('')
       setConfirmDelete(false)
       setAddFestivalId('')
@@ -120,18 +118,17 @@ export function ModalUser({
 
   // ── Mode création ──────────────────────────────────────────────────────────
   const handleCreate = async () => {
-    const { email, password, fullName } = createForm
+    const { email, fullName } = createForm
     if (!email.trim()) return setCreateError('L\'email est obligatoire.')
-    if (!password || password.length < 6) return setCreateError('Le mot de passe doit faire au moins 6 caractères.')
     setCreateError('')
     setSaving(true)
     try {
-      const { error } = await createUser({ email: email.trim().toLowerCase(), password, fullName: fullName.trim() || null })
+      const { error } = await createUser({ email: email.trim().toLowerCase(), fullName: fullName.trim() || null })
       if (error) {
-        setCreateError(error.message ?? 'Erreur lors de la création.')
-        showToast?.('Erreur lors de la création de l\'utilisateur', 'error')
+        setCreateError(error.message ?? 'Erreur lors de l\'invitation.')
+        showToast?.('Erreur lors de l\'envoi de l\'invitation', 'error')
       } else {
-        showToast?.('Utilisateur créé avec succès', 'success')
+        showToast?.('Invitation envoyée avec succès', 'success')
       }
     } finally {
       setSaving(false)
@@ -220,8 +217,8 @@ export function ModalUser({
       {mode === 'create' && (
         <div className="space-y-4">
           <p className="text-sm text-gray-400">
-            L'utilisateur sera créé avec l'email confirmé et pourra se connecter immédiatement.
-            Il sera automatiquement ajouté au festival par défaut en tant que Viewer.
+            Un email d'invitation sera envoyé. L'invité clique sur le lien,
+            choisit son mot de passe et son compte est activé immédiatement.
           </p>
 
           <div>
@@ -230,7 +227,7 @@ export function ModalUser({
               type="email"
               value={createForm.email}
               onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
-              placeholder="prenom.nom@email.com"
+              placeholder="prenom.nom@entreprise.com"
               className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
               autoFocus
             />
@@ -244,16 +241,6 @@ export function ModalUser({
               onChange={e => setCreateForm(f => ({ ...f, fullName: e.target.value }))}
               placeholder="Prénom Nom"
               className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs text-gray-400 mb-1">Mot de passe *</label>
-            <PasswordInput
-              value={createForm.password}
-              onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
-              placeholder="6 caractères minimum"
-              autoComplete="new-password"
             />
           </div>
 
@@ -274,7 +261,7 @@ export function ModalUser({
               className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: COLORS.accent }}
             >
-              {saving ? 'Création…' : 'Créer l\'utilisateur'}
+              {saving ? 'Envoi…' : 'Envoyer l\'invitation'}
             </button>
           </div>
         </div>
