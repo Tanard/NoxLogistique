@@ -104,9 +104,14 @@ Deno.serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     )
 
+    const siteUrl = Deno.env.get('SITE_URL') ?? 'https://nox-festival.vercel.app'
+
     const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       cleanEmail,
-      { data: { full_name: cleanFullName } }
+      {
+        data: { full_name: cleanFullName },
+        redirectTo: siteUrl,
+      }
     )
 
     if (inviteError) {
