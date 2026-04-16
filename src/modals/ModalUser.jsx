@@ -240,7 +240,7 @@ export function ModalUser({
               type="text"
               value={createForm.fullName}
               onChange={e => setCreateForm(f => ({ ...f, fullName: e.target.value }))}
-              placeholder="Prénom Nom"
+              placeholder="Nom Prénom"
               className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
             />
           </div>
