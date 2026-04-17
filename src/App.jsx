@@ -2,15 +2,18 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useBesoins } from './hooks/useBesoins'
 import { useFestival } from './hooks/useFestival'
+import { useTodos } from './hooks/useTodos'
 import { POLES, SORT_KEYS } from './constants'
 import { LoadingScreen } from './components/LoadingScreen'
 import { Sidebar } from './components/Sidebar'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import TodoPage from './pages/TodoPage'
 import { ModalFestivalSelect } from './modals/ModalFestivalSelect'
 import { ModalNouveau } from './modals/ModalNouveau'
 import { ModalDetail } from './modals/ModalDetail'
 import { ModalSetPassword } from './modals/ModalSetPassword'
+import { ModalTodo } from './modals/ModalTodo'
 import AdminPage from './pages/AdminPage'
 
 export default function App() {
@@ -25,6 +28,11 @@ export default function App() {
   const [sortDir, setSortDir] = useState('asc')
   const [showFestivalSelect, setShowFestivalSelect] = useState(false)
   const [appVisible, setAppVisible] = useState(false)
+
+  // Todo state
+  const [showNewTodo, setShowNewTodo] = useState(false)
+  const [selectedTodo, setSelectedTodo] = useState(null)
+  const [todoSearch, setTodoSearch] = useState('')
 
   // Fix #14 — Toast system
   const [toast, setToast] = useState(null)
@@ -88,6 +96,9 @@ export default function App() {
       setSortDir('asc')
       setActiveNav('general')
       setShowNew(false)
+      setShowNewTodo(false)
+      setSelectedTodo(null)
+      setTodoSearch('')
     }
   }, [user])
 
@@ -109,6 +120,18 @@ export default function App() {
     updateBesoin: updateBesoinDB,
     deleteBesoin: deleteBesoinDB,
   } = useBesoins({ enabled: !!user && !!selectedId, festivalId: selectedId ?? undefined })
+
+  // Todos avec sync temps réel
+  const {
+    todos,
+    loading: todosLoading,
+    addTodo: addTodoDB,
+    updateTodo: updateTodoDB,
+    deleteTodo: deleteTodoDB,
+  } = useTodos({ enabled: !!user && !!selectedId, festivalId: selectedId ?? undefined })
+
+  // #6 : reset todoSearch au changement de festival
+  useEffect(() => { setTodoSearch('') }, [selectedId])
 
   const counts = useMemo(() => {
     const map = {}
@@ -182,6 +205,25 @@ export default function App() {
     }
   }
 
+  // #9 : useCallback pour éviter les re-renders inutiles de ModalTodo
+  const addTodo = useCallback(async (data) => {
+    const { error } = await addTodoDB(data)
+    if (error) { console.error('[App] addTodo failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
+    return { error }
+  }, [addTodoDB, showToast])
+
+  const updateTodo = useCallback(async (data) => {
+    const { error } = await updateTodoDB(data)
+    if (error) { console.error('[App] updateTodo failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
+    return { error }
+  }, [updateTodoDB, showToast])
+
+  const deleteTodo = useCallback(async (id) => {
+    const { error } = await deleteTodoDB(id)
+    if (error) { console.error('[App] deleteTodo failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
+    return { error }
+  }, [deleteTodoDB, showToast])
+
   // Fix #22 — wrap onDone in useCallback
   const handleLoadingDone = useCallback(() => setAppLoading(false), [])
 
@@ -238,8 +280,20 @@ export default function App() {
         />
       )}
 
+      {activeNav === 'todo' && (
+        <TodoPage
+          isEditor={isEditor}
+          todos={todos}
+          loading={todosLoading}
+          searchQuery={todoSearch}
+          setSearchQuery={setTodoSearch}
+          setShowNew={setShowNewTodo}
+          setSelectedTodo={setSelectedTodo}
+        />
+      )}
+
       {/* Fix #21 — isEditor passed as prop (already present) */}
-      {activeNav !== 'admin' && (
+      {activeNav === 'general' && (
         <DashboardPage
           user={user}
           isAdmin={isAdmin}
@@ -281,6 +335,19 @@ export default function App() {
         selectedId={selectedId}
         onSelect={selectFestival}
       />
+      {/* #5 : montage conditionnel — évite les useEffect Realtime sur modal fermée */}
+      {(showNewTodo || !!selectedTodo) && (
+        <ModalTodo
+          open
+          onClose={() => { setShowNewTodo(false); setSelectedTodo(null) }}
+          todo={showNewTodo ? null : selectedTodo}
+          onSave={addTodo}
+          onUpdate={updateTodo}
+          onDelete={deleteTodo}
+          isAdmin={isAdmin}
+          isEditor={isEditor}
+        />
+      )}
 
       {/* Fix #14 — Toast notifications */}
       {toast && (

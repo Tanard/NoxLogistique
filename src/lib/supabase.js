@@ -50,6 +50,38 @@ export function rowToBesoin(row) {
   }
 }
 
+export function rowToTodo(row) {
+  return {
+    id: row.id,
+    festival_id: row.festival_id,
+    titre: row.titre,
+    description: row.description ?? '',
+    assignee: row.assignee,
+    statut: row.statut,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  }
+}
+
+export function todoToInsertRow(t, festivalId) {
+  return {
+    festival_id: festivalId,
+    titre: t.titre?.trim(),
+    description: t.description?.trim() || null,
+    assignee: t.assignee?.trim(),
+    statut: t.statut,
+  }
+}
+
+export function todoToUpdateRow(t) {
+  return {
+    titre: t.titre?.trim(),
+    description: t.description?.trim() || null,
+    assignee: t.assignee?.trim(),
+    statut: t.statut,
+  }
+}
+
 /**
  * Convertit un objet UI (camelCase) vers une ligne Supabase (snake_case).
  */

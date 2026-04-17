@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   Truck,
   Settings,
+  CheckSquare,
 } from 'lucide-react'
 
 export const COLORS = {
@@ -14,6 +15,7 @@ export const COLORS = {
   accent: '#7C3AED',
   bg: '#F8F7FC',
   textDark: '#2D2B3A',
+  tableHeader: '#2D2650',
 }
 
 export const POLES = [
@@ -30,9 +32,16 @@ export const STATUTS = [
   { label: 'Annulé', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5' },
 ]
 
+export const TODO_STATUTS = [
+  { label: 'À faire',  bg: '#FEF3C7', text: '#D97706', border: '#FCD34D' },
+  { label: 'En cours', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD' },
+  { label: 'Terminé',  bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' },
+]
+
 export const NAV_ITEMS = [
-  { label: 'Administration', icon: Settings,       id: 'admin',   adminOnly: true },
+  { label: 'Administration',   icon: Settings,        id: 'admin',   adminOnly: true },
   { label: 'Liste des Besoins', icon: LayoutDashboard, id: 'general' },
+  { label: 'Todo',             icon: CheckSquare,     id: 'todo' },
 ]
 
 // A1 — ROLE_CONFIG déplacé ici depuis AdminPage.jsx pour éviter l'import circulaire
@@ -60,4 +69,9 @@ export function formatDate(d) {
 export function todayISO() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+export function cycleTodoStatut(current) {
+  const idx = TODO_STATUTS.findIndex(s => s.label === current)
+  return TODO_STATUTS[(idx + 1) % TODO_STATUTS.length].label
 }
