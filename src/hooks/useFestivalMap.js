@@ -37,7 +37,6 @@ export function useFestivalMap({ enabled = true, festivalId } = {}) {
 
     setMarkers(markersData ?? [])
     setPaths(pathsData ?? [])
-    setLoading(false)
   }, [festivalId])
 
   useEffect(() => {
@@ -49,7 +48,7 @@ export function useFestivalMap({ enabled = true, festivalId } = {}) {
       return
     }
     setLoading(true)
-    fetchAll()
+    fetchAll().finally(() => setLoading(false))
   }, [enabled, festivalId, fetchAll])
 
   const updateMapView = useCallback(async (center_lat, center_lng, zoom) => {
