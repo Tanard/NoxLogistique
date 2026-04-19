@@ -7,6 +7,7 @@ import {
   Truck,
   Settings,
   CheckSquare,
+  Map,
 } from 'lucide-react'
 
 export const COLORS = {
@@ -27,29 +28,48 @@ export const POLES = [
 ]
 
 export const STATUTS = [
-  { label: 'En attente', bg: '#FEF3C7', text: '#D97706', border: '#FCD34D' },
-  { label: 'Validé', bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' },
+  { label: 'En attente', bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
+  { label: 'Validé', bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
   { label: 'Annulé', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5' },
 ]
 
 export const TODO_STATUTS = [
-  { label: 'À faire',  bg: '#FEF3C7', text: '#D97706', border: '#FCD34D' },
+  { label: 'À faire',  bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
   { label: 'En cours', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD' },
-  { label: 'Terminé',  bg: '#D1FAE5', text: '#059669', border: '#6EE7B7' },
+  { label: 'Terminé',  bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
 ]
 
 export const NAV_ITEMS = [
-  { label: 'Administration',   icon: Settings,        id: 'admin',   adminOnly: true },
+  { label: 'Administration',    icon: Settings,        id: 'admin',   adminOnly: true },
   { label: 'Liste des Besoins', icon: LayoutDashboard, id: 'general' },
-  { label: 'Todo',             icon: CheckSquare,     id: 'todo' },
+  { label: 'Todo',              icon: CheckSquare,     id: 'todo' },
+  { label: 'Carte technique',   icon: Map,             id: 'map' },
+]
+
+export const MAP_ELEMENTS = [
+  { id: 'water',       emoji: '💧', label: 'Point d\'eau',    color: '#3B82F6' },
+  { id: 'electricity', emoji: '⚡', label: 'Élec.',           color: '#F59E0B' },
+  { id: 'light',       emoji: '💡', label: 'Lumière',          color: '#FCD34D' },
+  { id: 'toilet',      emoji: '🚽', label: 'Toilettes',        color: '#8B5CF6' },
+  { id: 'generator',   emoji: '🔋', label: 'Groupe élec.',     color: '#EF4444' },
+  { id: 'stage',       emoji: '🎪', label: 'Scène',            color: '#10B981' },
+  { id: 'bar',         emoji: '🍺', label: 'Bar',              color: '#F97316' },
+  { id: 'parking',     emoji: '🅿️', label: 'Parking',          color: '#6B7280' },
+]
+
+export const MAP_PATH_TYPES = [
+  { id: 'water',       label: 'Eau',         color: '#3B82F6' },
+  { id: 'electricity', label: 'Électricité', color: '#F59E0B' },
+  { id: 'audio',       label: 'Son / Data',  color: '#8B5CF6' },
+  { id: 'fence',       label: 'Clôture',     color: '#6B7280' },
 ]
 
 // A1 — ROLE_CONFIG déplacé ici depuis AdminPage.jsx pour éviter l'import circulaire
 // (ModalUser importait depuis AdminPage, créant une dépendance cyclique)
 export const ROLE_CONFIG = {
-  admin:        { label: 'Admin',        bg: '#EF444420', text: '#EF4444', border: '#EF444460' },
+  admin:        { label: 'Admin',        bg: '#7C3AED20', text: '#7C3AED', border: '#7C3AED60' },
   pole_manager: { label: 'Responsable',  bg: '#F9731620', text: '#EA580C', border: '#F9731660' },
-  viewer:       { label: 'Viewer',       bg: '#22C55E20', text: '#16A34A', border: '#22C55E60' },
+  viewer:       { label: 'Viewer',       bg: '#64748B20', text: '#475569', border: '#64748B60' },
 }
 
 export const SORT_KEYS = {

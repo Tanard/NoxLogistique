@@ -156,12 +156,11 @@ Contrainte : Priorité haute — en production
 
 > ⚠️ MAINTENIR CETTE SECTION À JOUR. Coche ce qui est fait, ajoute ce qui est livré.
 
+- [x] Carte technique festival — outil interactif (marqueurs + tracés polylignes, fond satellite Esri, sauvegarde par festival en Supabase)
+
 ### Prochaine priorité :
 - Export Excel (.xlsx) — SheetJS
-- Calculateur parking (formulaire + résultats)
 
-### En attente d'action Thomas :
-- Exécuter le SQL de création de la table `todos` dans Supabase (RLS + Realtime inclus)
 
 ---
 
@@ -252,12 +251,14 @@ src/
 
 ## 10. SKILLS EXISTANTES
 
-| Skill               | Commande          | Rôle                                        | Déclenchement      |
-|---------------------|-------------------|----------------------------------------------|--------------------|
-| Audit global        | `/audit`          | Audit qualité + sécurité combiné             | Après chaque BUILD |
-| Code review         | `/code-review`    | Revue avant merge / livraison                | Après chaque BUILD |
-| Security review     | `/security-review`| Failles de sécurité sur les changements      | Après chaque BUILD |
-| Simplify            | `/simplify`       | Qualité, réutilisabilité, efficacité du code | Sur demande        |
+| Skill               | Commande                    | Rôle                                              | Déclenchement                  |
+|---------------------|-----------------------------|---------------------------------------------------|--------------------------------|
+| Audit global        | `/audit`                    | Audit qualité + sécurité combiné                  | Après chaque BUILD             |
+| Code review         | `/code-review`              | Revue avant merge / livraison                     | Après chaque BUILD             |
+| Security review     | `/security-review`          | Failles de sécurité sur les changements           | Après chaque BUILD             |
+| Simplify            | `/simplify`                 | Qualité, réutilisabilité, efficacité du code      | Sur demande                    |
+| Design critique     | `/design:design-critique`   | Audit UI : hiérarchie, cohérence, accessibilité   | Sur demande / après refonte UI |
+| Accessibilité       | `/design:accessibility-review` | Audit WCAG 2.1 AA                              | Sur demande                    |
 
 > Ajouter ici toute nouvelle skill créée.
 
@@ -277,6 +278,8 @@ src/
 | 16/04/2026   | CORS `*` sur les Edge Functions               | Sécurité portée par JWT + vérification admin ; CORS restrictif causait des blocages en production |
 | 16/04/2026   | Supabase CLI pour déployer les fonctions      | Déploiement dashboard non fiable ; CLI garantit le bon code   |
 | 18/04/2026   | Todo list Option A extensible vers B          | Thomas a validé Option A (léger). Colonnes priorite/echeance prévues en SQL (commentées) pour ajout sans refonte |
+| 19/04/2026   | Carte technique : react-leaflet + Esri satellite | Sans clé API, tuiles libres, qualité suffisante pour usage festival. Nominatim pour la géocodage (gratuit, OSM). |
+| 19/04/2026   | Dessin polylignes multi-segments avec ghost line | Double-clic pour terminer (debounce 220ms single vs dblclick). Pas de lib tierce : useMapEvents Leaflet natif. |
 
 ---
 

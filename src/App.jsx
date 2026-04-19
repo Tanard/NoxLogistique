@@ -15,6 +15,7 @@ import { ModalDetail } from './modals/ModalDetail'
 import { ModalSetPassword } from './modals/ModalSetPassword'
 import { ModalTodo } from './modals/ModalTodo'
 import AdminPage from './pages/AdminPage'
+import MapPage from './pages/MapPage'
 
 export default function App() {
   const [appLoading, setAppLoading] = useState(true)
@@ -42,6 +43,7 @@ export default function App() {
     setToast({ message, type })
     toastTimerRef.current = setTimeout(() => setToast(null), 3500)
   }, [])
+  useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }, [])
 
   // Auth Supabase
   const { user, isAdmin, isEditor, signIn, signUp, signOut, loadRole, needsPasswordSet, isRecovery, setPassword } = useAuth()
@@ -277,6 +279,13 @@ export default function App() {
           isAdmin={isAdmin}
           festivals={festivals}
           showToast={showToast}
+        />
+      )}
+
+      {activeNav === 'map' && (
+        <MapPage
+          festivalId={selectedId ?? undefined}
+          isEditor={isEditor}
         />
       )}
 
