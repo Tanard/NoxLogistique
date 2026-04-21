@@ -1,12 +1,16 @@
-import { Calendar, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
+import { NavLink } from 'react-router-dom'
 import { NAV_ITEMS, COLORS } from '../constants'
 
-export function Sidebar({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, activeFestival, loadingFestivals, user, isAdmin, onFestivalClick }) {
+const NAV_PATH = { general: '/dashboard', todo: '/todo', map: '/map', admin: '/admin' }
+
+export function Sidebar({ sidebarOpen, setSidebarOpen, activeFestival, loadingFestivals, user, isAdmin, onFestivalClick }) {
   return (
     <>
       {/* Mobile hamburger */}
       <button
         onClick={() => setSidebarOpen(true)}
+        aria-label="Ouvrir le menu"
         className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg text-white shadow-lg"
         style={{ backgroundColor: COLORS.sidebar }}
       >
@@ -42,15 +46,18 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, activeNav, setActiveNav, 
         </div>
         <nav className="flex-1 px-3 mt-4">
           {NAV_ITEMS.filter(item => !item.adminOnly || isAdmin).map(item => (
-            <button
+            <NavLink
               key={item.id}
-              onClick={() => { setActiveNav(item.id); setSidebarOpen(false) }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all mb-1 ${activeNav === item.id ? 'text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
-              style={activeNav === item.id ? { backgroundColor: COLORS.accent + '20', color: '#fff', borderLeft: `3px solid ${COLORS.accent}` } : {}}
+              to={NAV_PATH[item.id]}
+              onClick={() => setSidebarOpen(false)}
+              className={({ isActive }) =>
+                `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all mb-1 ${isActive ? 'text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`
+              }
+              style={({ isActive }) => isActive ? { backgroundColor: COLORS.accent + '20', color: '#fff', borderLeft: `3px solid ${COLORS.accent}` } : {}}
             >
               <item.icon size={18} />
               {item.label}
-            </button>
+            </NavLink>
           ))}
         </nav>
         <div className="p-4 text-xs text-gray-600">v1.0</div>

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Modal } from '../components/ui/Modal'
 import { PasswordInput } from '../components/ui/PasswordInput'
+import { ErrorBlock } from '../components/ui/ErrorBlock'
+import { parseError } from '../lib/errors'
 import { COLORS } from '../constants'
 import { KeyRound } from 'lucide-react'
 
@@ -12,17 +14,17 @@ import { KeyRound } from 'lucide-react'
 export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false }) {
   const [password, setPasswordVal]   = useState('')
   const [confirm, setConfirm]        = useState('')
-  const [error, setError]            = useState('')
+  const [error, setError]            = useState(null)
   const [saving, setSaving]          = useState(false)
 
   const handleSubmit = async () => {
-    if (password.length < 6) return setError('Le mot de passe doit faire au moins 6 caractères.')
-    if (password !== confirm)  return setError('Les mots de passe ne correspondent pas.')
-    setError('')
+    if (password.length < 6) return setError({ message: 'Le mot de passe doit faire au moins 6 caractères.', code: null })
+    if (password !== confirm)  return setError({ message: 'Les mots de passe ne correspondent pas.', code: null })
+    setError(null)
     setSaving(true)
     try {
       const { error: err } = await setPassword(password)
-      if (err) setError(err.message ?? 'Erreur lors de la mise à jour.')
+      if (err) setError(parseError(err))
       else onDone()
     } finally {
       setSaving(false)
@@ -74,9 +76,7 @@ export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false
           />
         </div>
 
-        {error && (
-          <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{error}</p>
-        )}
+        <ErrorBlock message={error?.message} code={error?.code} />
 
         <div className="flex justify-end pt-2 border-t border-white/10">
           <button

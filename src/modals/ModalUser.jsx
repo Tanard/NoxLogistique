@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Modal } from '../components/ui/Modal'
+import { ErrorBlock } from '../components/ui/ErrorBlock'
+import { parseError } from '../lib/errors'
 import { ROLE_CONFIG, COLORS } from '../constants'
 import { Trash2, Plus, Mail, UserCircle2, X } from 'lucide-react'
 
@@ -58,7 +60,7 @@ export function ModalUser({
 }) {
   // ── État formulaire création ───────────────────────────────────────────────
   const [createForm, setCreateForm] = useState({ email: '', fullName: '' })
-  const [createError, setCreateError] = useState('')
+  const [createError, setCreateError] = useState(null)
   const [saving, setSaving] = useState(false)
 
   // ── État local des memberships (mode edit) ─────────────────────────────────
@@ -78,7 +80,7 @@ export function ModalUser({
   useEffect(() => {
     if (open) {
       setCreateForm({ email: '', fullName: '' })
-      setCreateError('')
+      setCreateError(null)
       setConfirmDelete(false)
       setAddFestivalId('')
       setAddFestivalRole('viewer')
@@ -119,14 +121,14 @@ export function ModalUser({
   // ── Mode création ──────────────────────────────────────────────────────────
   const handleCreate = async () => {
     const { email, fullName } = createForm
-    if (!email.trim()) return setCreateError('L\'email est obligatoire.')
-    if (!fullName.trim()) return setCreateError('Le nom et prénom sont obligatoires.')
-    setCreateError('')
+    if (!email.trim()) return setCreateError({ message: "L'email est obligatoire.", code: null })
+    if (!fullName.trim()) return setCreateError({ message: 'Le nom et prénom sont obligatoires.', code: null })
+    setCreateError(null)
     setSaving(true)
     try {
       const { error } = await createUser({ email: email.trim().toLowerCase(), fullName: fullName.trim() || null })
       if (error) {
-        setCreateError(error.message ?? 'Erreur lors de l\'invitation.')
+        setCreateError(parseError(error))
         showToast?.('Erreur lors de l\'envoi de l\'invitation', 'error')
       } else {
         showToast?.('Invitation envoyée avec succès', 'success')
@@ -188,7 +190,7 @@ export function ModalUser({
     try {
       const { error } = await deleteUser(user.id)
       if (error) showToast?.('Erreur lors de la suppression', 'error')
-      else showToast?.('Utilisateur supprimé', 'success')
+      else { showToast?.('Utilisateur supprimé', 'success'); onSaved?.(); onClose() }
     } finally {
       setSaving(false)
     }
@@ -245,9 +247,7 @@ export function ModalUser({
             />
           </div>
 
-          {createError && (
-            <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">{createError}</p>
-          )}
+          <ErrorBlock message={createError?.message} code={createError?.code} />
 
           <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
             <button

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { PasswordInput } from '../components/ui/PasswordInput'
+import { ErrorBlock } from '../components/ui/ErrorBlock'
+import { parseError } from '../lib/errors'
 import { COLORS } from '../constants'
 
 function RegisterForm({ onBack, onSignUp }) {
@@ -7,23 +9,23 @@ function RegisterForm({ onBack, onSignUp }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(null)
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleRegister = async () => {
-    setError(''); setSuccess('')
-    if (!fullName.trim()) { setError('Nom complet requis'); return }
-    if (!email.trim()) { setError('Email requis'); return }
-    if (!password || password.length < 6) { setError('Mot de passe : 6 caractères minimum'); return }
-    if (password !== confirm) { setError('Les mots de passe ne correspondent pas'); return }
+    setError(null); setSuccess('')
+    if (!fullName.trim()) { setError({ message: 'Nom complet requis.', code: null }); return }
+    if (!email.trim()) { setError({ message: 'Email requis.', code: null }); return }
+    if (!password || password.length < 6) { setError({ message: 'Mot de passe : 6 caractères minimum.', code: null }); return }
+    if (password !== confirm) { setError({ message: 'Les mots de passe ne correspondent pas.', code: null }); return }
 
     setLoading(true)
-    const { error } = await onSignUp(email, password, fullName)
+    const { error: err } = await onSignUp(email, password, fullName)
     setLoading(false)
 
-    if (error) {
-      setError(error.message)
+    if (err) {
+      setError(parseError(err))
     } else {
       setSuccess('Compte créé ! Vérifie tes emails pour confirmer ton adresse.')
       setFullName(''); setEmail(''); setPassword(''); setConfirm('')
@@ -50,7 +52,7 @@ function RegisterForm({ onBack, onSignUp }) {
           <label className="block text-sm font-medium text-gray-300 mb-1">Confirmer le mot de passe</label>
           <PasswordInput value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Répéter le mot de passe" autoComplete="new-password" onKeyDown={e => e.key === 'Enter' && !loading && handleRegister()} />
         </div>
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        <ErrorBlock message={error?.message} code={error?.code} />
         {success && <p className="text-green-400 text-sm">{success}</p>}
       </div>
       <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
@@ -68,17 +70,18 @@ function RegisterForm({ onBack, onSignUp }) {
 export default function LoginPage({ onSignIn, onSignUp }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [showRegister, setShowRegister] = useState(false)
 
   const handleLogin = async () => {
-    setError(''); setLoading(true)
-    const { error } = await onSignIn(email, password)
+    setError(null)
+    if (!email.trim()) return setError({ message: 'Veuillez saisir votre email.', code: null })
+    if (!password) return setError({ message: 'Veuillez saisir votre mot de passe.', code: null })
+    setLoading(true)
+    const { error: err } = await onSignIn(email, password)
     setLoading(false)
-    if (error) {
-      setError(error.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect' : error.message)
-    }
+    if (err) setError(parseError(err))
   }
 
   return (
@@ -87,10 +90,7 @@ export default function LoginPage({ onSignIn, onSignUp }) {
       style={{ backgroundColor: COLORS.sidebar }}
     >
       <div className="mb-8 text-center">
-        <h1
-          className="text-4xl font-bold text-white"
-          style={{ fontFamily: "'Courier New', monospace", letterSpacing: '2px' }}
-        >
+        <h1 className="text-4xl font-bold text-white tracking-wide">
           Logisticore
         </h1>
         <p className="text-gray-400 mt-2 text-sm">Gestion logistique festival</p>
@@ -114,6 +114,7 @@ export default function LoginPage({ onSignIn, onSignUp }) {
                   onChange={e => setEmail(e.target.value)}
                   placeholder="nom@exemple.com"
                   autoComplete="email"
+                  onKeyDown={e => e.key === 'Enter' && !loading && handleLogin()}
                   className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
                 />
               </div>
@@ -127,7 +128,7 @@ export default function LoginPage({ onSignIn, onSignUp }) {
                   onKeyDown={e => e.key === 'Enter' && !loading && handleLogin()}
                 />
               </div>
-              {error && <p className="text-red-400 text-sm">{error}</p>}
+              <ErrorBlock message={error?.message} code={error?.code} />
             </div>
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
               <button

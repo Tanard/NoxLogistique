@@ -3,7 +3,7 @@ import { Modal } from '../components/ui/Modal'
 import { POLES, COLORS, todayISO } from '../constants'
 
 export function ModalNouveau({ open, onClose, onSave }) {
-  const [form, setForm] = useState({ pole: POLES[0].label, designation: '', quantite: '', caracteristique: '', usage: '' })
+  const [form, setForm] = useState({ pole: POLES[0].label, zone: '', designation: '', quantite: '', caracteristique: '', usage: '' })
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
   // Fix #15 — error and loading states
@@ -35,7 +35,7 @@ export function ModalNouveau({ open, onClose, onSave }) {
       })
       if (result?.error) return  // reste ouvert, toast affiché dans App.jsx
       // Succès : reset et fermeture
-      setForm({ pole: POLES[0].label, designation: '', quantite: '', caracteristique: '', usage: '' })
+      setForm({ pole: POLES[0].label, zone: '', designation: '', quantite: '', caracteristique: '', usage: '' })
       setError('')
       onClose()
     } finally {
@@ -51,6 +51,10 @@ export function ModalNouveau({ open, onClose, onSave }) {
           <select value={form.pole} onChange={e => set('pole', e.target.value)} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
             {POLES.map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Zone</label>
+          <input type="text" value={form.zone} onChange={e => set('zone', e.target.value)} placeholder="Ex : Entrée, Parking, Scène…" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">Désignation du besoin *</label>

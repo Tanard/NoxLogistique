@@ -1,7 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useUsers } from '../hooks/useUsers'
 import { ModalUser } from '../modals/ModalUser'
-import { ROLE_CONFIG, COLORS } from '../constants'  // A1 — import depuis constants (plus de circular import)
+import { COLORS } from '../constants'
+import { RoleBadge } from '../components/ui/RoleBadge'
+import { SortableHeader } from '../components/ui/SortableHeader'
+import { TopBar } from '../components/ui/TopBar'
 import { Search, UserPlus, Users, RefreshCw } from 'lucide-react'
 
 /** Retourne le rôle le plus élevé parmi les memberships d'un utilisateur */
@@ -11,24 +14,20 @@ function getTopRole(memberships) {
   return 'viewer'
 }
 
-/** Badge coloré selon le rôle */
-function RoleBadge({ role }) {
-  const rc = ROLE_CONFIG[role] ?? ROLE_CONFIG.viewer
-  return (
-    <span
-      className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold border"
-      style={{ backgroundColor: rc.bg, color: rc.text, borderColor: rc.border }}
-    >
-      {rc.label}
-    </span>
-  )
-}
+const ROLE_ORDER = { admin: 0, pole_manager: 1, viewer: 2 }
 
-export default function AdminPage({ isAdmin, festivals, showToast }) {
+export default function AdminPage({ isAdmin, festivals, showToast, user, activeFestival, onFestivalClick, signOut }) {
   const [searchQuery, setSearchQuery]     = useState('')
   const [selectedUser, setSelectedUser]   = useState(null)
   const [showCreate, setShowCreate]       = useState(false)
   const [selectedFestival, setSelectedFestival] = useState(null)
+  const [sortKey, setSortKey] = useState('role')
+  const [sortDir, setSortDir] = useState('asc')
+
+  const handleSort = (key) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
+  }
 
   const {
     users, loading, reload,
@@ -43,18 +42,43 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
     return { ...f, memberCount: members.length, adminCount: admins.length }
   }), [festivals, users])
 
-  // P1 — useMemo : filtre recalculé seulement quand les dépendances changent
-  const filtered = useMemo(() => users.filter(u => {
-    if (selectedFestival && !u.memberships.some(m => m.festivalId === selectedFestival)) return false
-    if (!searchQuery) return true
-    const q = searchQuery.toLowerCase()
-    return (u.email ?? '').toLowerCase().includes(q)
-      || (u.fullName ?? '').toLowerCase().includes(q)
-  }), [users, selectedFestival, searchQuery])
+  // P1 — useMemo : filtre + tri recalculés seulement quand les dépendances changent
+  const filtered = useMemo(() => {
+    const list = users.filter(u => {
+      if (selectedFestival && !u.memberships.some(m => m.festivalId === selectedFestival)) return false
+      if (!searchQuery) return true
+      const q = searchQuery.toLowerCase()
+      return (u.email ?? '').toLowerCase().includes(q)
+        || (u.fullName ?? '').toLowerCase().includes(q)
+    })
+    const sorted = [...list].sort((a, b) => {
+      if (sortKey === 'role') {
+        const ra = ROLE_ORDER[getTopRole(a.memberships)] ?? 99
+        const rb = ROLE_ORDER[getTopRole(b.memberships)] ?? 99
+        if (ra !== rb) return sortDir === 'asc' ? ra - rb : rb - ra
+        return 0
+      }
+      if (sortKey === 'name') {
+        const na = (a.fullName ?? '').toLowerCase()
+        const nb = (b.fullName ?? '').toLowerCase()
+        return sortDir === 'asc' ? na.localeCompare(nb, 'fr') : nb.localeCompare(na, 'fr')
+      }
+      return 0
+    })
+    return sorted
+  }, [users, selectedFestival, searchQuery, sortKey, sortDir])
 
   return (
     <main className="flex-1 overflow-y-auto" style={{ backgroundColor: COLORS.bg }}>
       <div className="p-4 md:p-8 pt-16 md:pt-8 max-w-5xl mx-auto">
+
+        <TopBar
+          user={user}
+          isAdmin={isAdmin}
+          activeFestival={activeFestival}
+          onFestivalClick={onFestivalClick}
+          onSignOut={signOut}
+        />
 
         {/* ── En-tête ──────────────────────────────────────────────────────── */}
         <div className="flex items-start justify-between mb-6 gap-4">
@@ -152,15 +176,9 @@ export default function AdminPage({ isAdmin, festivals, showToast }) {
           <table className="w-full" style={{ fontSize: '13px' }}>
             <thead>
               <tr style={{ backgroundColor: '#2D2650' }}>
-                <th className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3">
-                  Nom / Prénom
-                </th>
-                <th className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3">
-                  Rôle max.
-                </th>
-                <th className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3">
-                  Festivals
-                </th>
+                <SortableHeader label="Nom / Prénom" sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <SortableHeader label="Rôle" sortKey="role" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <th className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3">Festivals</th>
               </tr>
             </thead>
             <tbody>

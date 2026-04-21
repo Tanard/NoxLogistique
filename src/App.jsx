@@ -1,36 +1,39 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import { useBesoins } from './hooks/useBesoins'
 import { useFestival } from './hooks/useFestival'
 import { useTodos } from './hooks/useTodos'
-import { POLES, SORT_KEYS } from './constants'
+import { POLES } from './constants'
+import { useFestivalMembers } from './hooks/useFestivalMembers'
 import { LoadingScreen } from './components/LoadingScreen'
 import { Sidebar } from './components/Sidebar'
 import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import TodoPage from './pages/TodoPage'
 import { ModalFestivalSelect } from './modals/ModalFestivalSelect'
 import { ModalNouveau } from './modals/ModalNouveau'
 import { ModalDetail } from './modals/ModalDetail'
 import { ModalSetPassword } from './modals/ModalSetPassword'
 import { ModalTodo } from './modals/ModalTodo'
-import AdminPage from './pages/AdminPage'
-import MapPage from './pages/MapPage'
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const TodoPage = lazy(() => import('./pages/TodoPage'))
+const MapPage = lazy(() => import('./pages/MapPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
 
 export default function App() {
+  const navigate = useNavigate()
+
   const [appLoading, setAppLoading] = useState(true)
-  const [activeNav, setActiveNav] = useState('general')
   const [showNew, setShowNew] = useState(false)
   const [selectedBesoin, setSelectedBesoin] = useState(null)
   const [filterPole, setFilterPole] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortKey, setSortKey] = useState(null)
+  const [sortKey, setSortKey] = useState('statut')
   const [sortDir, setSortDir] = useState('asc')
   const [showFestivalSelect, setShowFestivalSelect] = useState(false)
   const [appVisible, setAppVisible] = useState(false)
 
-  // Todo state
   const [showNewTodo, setShowNewTodo] = useState(false)
   const [selectedTodo, setSelectedTodo] = useState(null)
   const [todoSearch, setTodoSearch] = useState('')
@@ -45,15 +48,10 @@ export default function App() {
   }, [])
   useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }, [])
 
-  // Auth Supabase
   const { user, isAdmin, isEditor, signIn, signUp, signOut, loadRole, needsPasswordSet, isRecovery, setPassword } = useAuth()
-
-  // Festivals accessibles à l'utilisateur connecté
   const { festivals, activeFestival, selectedId, selectFestival, loadingFestivals } = useFestival(user?.id)
 
-  // A2 — Fusion des deux effets loadRole en un seul :
-  // avant : 2 appels réseau distincts à chaque changement de festival
-  // après : 1 seul appel (reset si pas de contexte valide, chargement sinon)
+  // A2 — Fusion des deux effets loadRole en un seul
   useEffect(() => {
     if (user?.id && selectedId) {
       loadRole(user.id, selectedId)
@@ -63,23 +61,15 @@ export default function App() {
   }, [user?.id, selectedId, loadRole])
 
   // Fix #7 & #12 & #26 — Ouvre le sélecteur de festival au PREMIER login seulement.
-  // La clé : vérifier directement localStorage plutôt que selectedId.
-  // selectedId est temporairement null au F5 (avant que useFestival le restaure),
-  // ce qui causait l'ouverture intempestive du modal à chaque rechargement.
   const prevUserIdRef = useRef(null)
   useEffect(() => {
     if (!user?.id) {
       prevUserIdRef.current = null
       return
     }
-    // Attendre que les festivals soient réellement chargés
     if (loadingFestivals || festivals.length === 0) return
-
-    // C'est un nouveau login si user.id vient de changer
     if (prevUserIdRef.current !== user.id) {
       prevUserIdRef.current = user.id
-      // Ouvrir le modal uniquement s'il y a plusieurs festivals
-      // ET qu'aucun festival n'a été sauvegardé en localStorage (vrai premier choix)
       let hasSavedFestival = false
       try { hasSavedFestival = !!localStorage.getItem('logisticore_festival_id') } catch {}
       if (festivals.length !== 1 && !hasSavedFestival) {
@@ -96,18 +86,17 @@ export default function App() {
       setSelectedBesoin(null)
       setSortKey(null)
       setSortDir('asc')
-      setActiveNav('general')
       setShowNew(false)
       setShowNewTodo(false)
       setSelectedTodo(null)
       setTodoSearch('')
+      navigate('/dashboard')
     }
-  }, [user])
+  }, [user, navigate])
 
-  // Fix #23 — Fondu d'entrée quand l'app devient visible (après login)
+  // Fix #23 — Fondu d'entrée quand l'app devient visible
   useEffect(() => {
     if (user && !appLoading) {
-      // requestAnimationFrame garantit que le DOM est prêt avant de déclencher la transition
       const raf = requestAnimationFrame(() => setAppVisible(true))
       return () => cancelAnimationFrame(raf)
     } else {
@@ -115,7 +104,8 @@ export default function App() {
     }
   }, [user?.id, appLoading])
 
-  // Besoins avec sync temps réel (activé seulement si connecté + festival sélectionné)
+  const festivalMembers = useFestivalMembers(selectedId ?? undefined)
+
   const {
     besoins,
     addBesoin: addBesoinDB,
@@ -123,7 +113,6 @@ export default function App() {
     deleteBesoin: deleteBesoinDB,
   } = useBesoins({ enabled: !!user && !!selectedId, festivalId: selectedId ?? undefined })
 
-  // Todos avec sync temps réel
   const {
     todos,
     loading: todosLoading,
@@ -132,7 +121,6 @@ export default function App() {
     deleteTodo: deleteTodoDB,
   } = useTodos({ enabled: !!user && !!selectedId, festivalId: selectedId ?? undefined })
 
-  // #6 : reset todoSearch au changement de festival
   useEffect(() => { setTodoSearch('') }, [selectedId])
 
   const counts = useMemo(() => {
@@ -142,21 +130,16 @@ export default function App() {
     return map
   }, [besoins])
 
-  // Fix #19 — Ferme la modal de détail si le besoin affiché est supprimé via Realtime
+  // Fix #19 — Ferme la modal de détail si le besoin est supprimé via Realtime
   useEffect(() => {
     if (selectedBesoin && !besoins.find(b => b.id === selectedBesoin.id)) {
       setSelectedBesoin(null)
     }
   }, [besoins, selectedBesoin])
 
-  const handleSort = (header) => {
-    const key = SORT_KEYS[header]
-    if (sortKey === key) {
-      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortKey(key)
-      setSortDir('asc')
-    }
+  const handleSort = (key) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(key); setSortDir('asc') }
   }
 
   // Fix #3 — nullish coalescing on designation/usage/pole
@@ -169,45 +152,41 @@ export default function App() {
       }
       return true
     })
+    const STATUT_ORDER = { 'En attente': 0, 'Validé': 1, 'Annulé': 2 }
     if (sortKey) {
       list = [...list].sort((a, b) => {
-        let va = a[sortKey], vb = b[sortKey]
-        if (sortKey === 'quantite') { va = Number(va); vb = Number(vb) }
-        else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase() }
-        if (va < vb) return sortDir === 'asc' ? -1 : 1
-        if (va > vb) return sortDir === 'asc' ? 1 : -1
-        return 0
+        if (sortKey === 'quantite') {
+          const diff = Number(a[sortKey]) - Number(b[sortKey])
+          return sortDir === 'asc' ? diff : -diff
+        }
+        if (sortKey === 'statut') {
+          const diff = (STATUT_ORDER[a.statut] ?? 99) - (STATUT_ORDER[b.statut] ?? 99)
+          return sortDir === 'asc' ? diff : -diff
+        }
+        const va = String(a[sortKey] ?? '')
+        const vb = String(b[sortKey] ?? '')
+        return sortDir === 'asc' ? va.localeCompare(vb, 'fr') : vb.localeCompare(va, 'fr')
       })
     }
     return list
   }, [besoins, filterPole, searchQuery, sortKey, sortDir])
 
-  // Fix #14 — showToast on error
   const addBesoin = async (data) => {
     const { error } = await addBesoinDB(data)
-    if (error) {
-      console.error('[App] addBesoin failed:', error)
-      showToast('Erreur lors de la sauvegarde', 'error')
-    }
+    if (error) { console.error('[App] addBesoin failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
   }
 
   const updateBesoin = async (updated) => {
     const { error } = await updateBesoinDB(updated)
-    if (error) {
-      console.error('[App] updateBesoin failed:', error)
-      showToast('Erreur lors de la sauvegarde', 'error')
-    }
+    if (error) { console.error('[App] updateBesoin failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
   }
 
   const deleteBesoin = async (id) => {
     const { error } = await deleteBesoinDB(id)
-    if (error) {
-      console.error('[App] deleteBesoin failed:', error)
-      showToast('Erreur lors de la sauvegarde', 'error')
-    }
+    if (error) { console.error('[App] deleteBesoin failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
+    return { error }
   }
 
-  // #9 : useCallback pour éviter les re-renders inutiles de ModalTodo
   const addTodo = useCallback(async (data) => {
     const { error } = await addTodoDB(data)
     if (error) { console.error('[App] addTodo failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
@@ -226,21 +205,16 @@ export default function App() {
     return { error }
   }, [deleteTodoDB, showToast])
 
-  // Fix #22 — wrap onDone in useCallback
   const handleLoadingDone = useCallback(() => setAppLoading(false), [])
 
-  // Loading screen shown once on first mount
   if (appLoading) {
     return <LoadingScreen onDone={handleLoadingDone} />
   }
 
-  // Fix #18 — Not authenticated — show full-screen login page only (no duplicate ModalLogin)
   if (!user) {
     return <LoginPage onSignIn={signIn} onSignUp={signUp} />
   }
 
-  // Utilisateur connecté via un lien d'invitation ou de reset : doit définir son mot de passe
-  // avant d'accéder à quoi que ce soit. On ne rend rien d'autre derrière (sécurité + UX).
   if (needsPasswordSet) {
     return (
       <ModalSetPassword
@@ -250,6 +224,18 @@ export default function App() {
         isRecovery={isRecovery}
       />
     )
+  }
+
+  const cycleStatutBesoin = async (b) => {
+    const STATUTS_ORDER = ['En attente', 'Validé', 'Annulé']
+    const idx = STATUTS_ORDER.indexOf(b.statut)
+    await updateBesoin({ ...b, statut: STATUTS_ORDER[(idx + 1) % STATUTS_ORDER.length] })
+  }
+
+  const cycleStatutTodo = async (t) => {
+    const STATUTS_ORDER = ['À faire', 'En cours', 'Terminé']
+    const idx = STATUTS_ORDER.indexOf(t.statut)
+    await updateTodo({ ...t, statut: STATUTS_ORDER[(idx + 1) % STATUTS_ORDER.length] })
   }
 
   return (
@@ -264,8 +250,6 @@ export default function App() {
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        activeNav={activeNav}
-        setActiveNav={setActiveNav}
         activeFestival={activeFestival}
         loadingFestivals={loadingFestivals}
         user={user}
@@ -273,58 +257,84 @@ export default function App() {
         onFestivalClick={() => setShowFestivalSelect(true)}
       />
 
-      {/* Onglet Administration (admin uniquement) */}
-      {activeNav === 'admin' && isAdmin && (
-        <AdminPage
-          isAdmin={isAdmin}
-          festivals={festivals}
-          showToast={showToast}
-        />
-      )}
-
-      {activeNav === 'map' && (
-        <MapPage
-          festivalId={selectedId ?? undefined}
-          isEditor={isEditor}
-        />
-      )}
-
-      {activeNav === 'todo' && (
-        <TodoPage
-          isEditor={isEditor}
-          todos={todos}
-          loading={todosLoading}
-          searchQuery={todoSearch}
-          setSearchQuery={setTodoSearch}
-          setShowNew={setShowNewTodo}
-          setSelectedTodo={setSelectedTodo}
-        />
-      )}
-
-      {/* Fix #21 — isEditor passed as prop (already present) */}
-      {activeNav === 'general' && (
-        <DashboardPage
-          user={user}
-          isAdmin={isAdmin}
-          isEditor={isEditor}
-          signOut={signOut}
-          activeFestival={activeFestival}
-          selectedId={selectedId}
-          besoins={besoins}
-          filtered={filtered}
-          counts={counts}
-          filterPole={filterPole}
-          setFilterPole={setFilterPole}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          sortKey={sortKey}
-          sortDir={sortDir}
-          handleSort={handleSort}
-          setSelectedBesoin={setSelectedBesoin}
-          setShowNew={setShowNew}
-          setShowFestivalSelect={setShowFestivalSelect}
-        />
-      )}
+      <Suspense fallback={null}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <DashboardPage
+                user={user}
+                isAdmin={isAdmin}
+                isEditor={isEditor}
+                signOut={signOut}
+                activeFestival={activeFestival}
+                selectedId={selectedId}
+                besoins={besoins}
+                filtered={filtered}
+                counts={counts}
+                filterPole={filterPole}
+                setFilterPole={setFilterPole}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                handleSort={handleSort}
+                setSelectedBesoin={setSelectedBesoin}
+                setShowNew={setShowNew}
+                setShowFestivalSelect={setShowFestivalSelect}
+                onCycleStatut={cycleStatutBesoin}
+              />
+            }
+          />
+          <Route
+            path="/todo"
+            element={
+              <TodoPage
+                isEditor={isEditor}
+                todos={todos}
+                loading={todosLoading}
+                searchQuery={todoSearch}
+                setSearchQuery={setTodoSearch}
+                setShowNew={setShowNewTodo}
+                setSelectedTodo={setSelectedTodo}
+                onCycleStatut={cycleStatutTodo}
+                user={user}
+                isAdmin={isAdmin}
+                activeFestival={activeFestival}
+                onFestivalClick={() => setShowFestivalSelect(true)}
+                signOut={signOut}
+              />
+            }
+          />
+          <Route
+            path="/map"
+            element={
+              <MapPage
+                festivalId={selectedId ?? undefined}
+                isEditor={isEditor}
+              />
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              isAdmin
+                ? <AdminPage
+                    isAdmin={isAdmin}
+                    festivals={festivals}
+                    showToast={showToast}
+                    user={user}
+                    activeFestival={activeFestival}
+                    onFestivalClick={() => setShowFestivalSelect(true)}
+                    signOut={signOut}
+                  />
+                : <Navigate to="/dashboard" replace />
+            }
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Suspense>
 
       {/* Modals */}
       <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} />
@@ -344,7 +354,6 @@ export default function App() {
         selectedId={selectedId}
         onSelect={selectFestival}
       />
-      {/* #5 : montage conditionnel — évite les useEffect Realtime sur modal fermée */}
       {(showNewTodo || !!selectedTodo) && (
         <ModalTodo
           open
@@ -355,6 +364,8 @@ export default function App() {
           onDelete={deleteTodo}
           isAdmin={isAdmin}
           isEditor={isEditor}
+          festivalId={selectedId ?? undefined}
+          festivalMembers={festivalMembers}
         />
       )}
 

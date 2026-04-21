@@ -42,7 +42,7 @@ function TextareaField({ value, onChange, placeholder }) {
   )
 }
 
-export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isAdmin, isEditor }) {
+export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isAdmin, isEditor, festivalMembers = [] }) {
   const isNew = !todo
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -74,7 +74,6 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
     const titre = form.titre?.trim() ?? ''
     const assignee = form.assignee?.trim() ?? ''
     if (!titre) { setError('Le titre est requis.'); return }
-    if (!assignee) { setError("L'assigné est requis."); return }
 
     setSaving(true)
     try {
@@ -141,9 +140,21 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
           )}
         </Field>
 
-        <Field label="Assigné à *">
+        <Field label="Assigné à">
           {editing ? (
-            <InputField value={form.assignee} onChange={v => set('assignee', v)} placeholder="Nom de la personne responsable" />
+            <div className="relative">
+              <input
+                type="text"
+                list="assignee-members"
+                value={form.assignee}
+                onChange={e => set('assignee', e.target.value)}
+                placeholder="Nom de la personne (optionnel)"
+                className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+              />
+              <datalist id="assignee-members">
+                {festivalMembers.map(name => <option key={name} value={name} />)}
+              </datalist>
+            </div>
           ) : (
             <p className="text-white text-sm py-2">{form.assignee || '—'}</p>
           )}

@@ -32,6 +32,7 @@ export function rowToBesoin(row) {
     id: row.id,
     festival_id: row.festival_id,
     pole: row.pole,
+    zone: row.zone ?? '',
     date: row.date,
     designation: row.designation,
     quantite: row.quantite,
@@ -89,6 +90,7 @@ export function besoinToRow(b, festivalId) {
   return {
     festival_id: festivalId,
     pole: b.pole,
+    zone: b.zone?.trim() || null,
     date: b.date,
     designation: b.designation,
     quantite: Number(b.quantite) || 0,

@@ -1,7 +1,15 @@
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { COLORS } from '../../constants'
 
 export function Modal({ open, onClose, children, title }) {
+  useEffect(() => {
+    if (!open) return
+    const handle = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handle)
+    return () => document.removeEventListener('keydown', handle)
+  }, [open, onClose])
+
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>

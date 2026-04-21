@@ -19,7 +19,7 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
     setForm({ ...besoin })
     setEditing(false)
     setConfirmDelete(false)
-  }, [besoin?.id])
+  }, [besoin])
 
   if (!besoin) return null
 
@@ -27,6 +27,7 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
 
   const cycleStatut = () => {
     const idx = STATUTS.findIndex(s => s.label === form.statut)
+    if (idx < 0) return
     set('statut', STATUTS[(idx + 1) % STATUTS.length].label)
   }
 
@@ -49,14 +50,14 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
       <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">Demande</h3>
-          {(isAdmin || isEditor) && (
+          {(isAdmin || isEditor) && !editing && (
             <button
-              onClick={() => setEditing(!editing)}
+              onClick={() => setEditing(true)}
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors text-white"
               style={{ backgroundColor: COLORS.accent }}
             >
               <Pencil size={12} />
-              {editing ? 'Verrouiller' : 'Modifier'}
+              Modifier
             </button>
           )}
         </div>
@@ -67,6 +68,10 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
               <select value={form.pole} onChange={e => set('pole', e.target.value)} className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
                 {POLES.map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
               </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1">Zone</label>
+              <input type="text" value={form.zone ?? ''} onChange={e => set('zone', e.target.value)} placeholder="Ex : Entrée, Parking, Scène…" className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]" />
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">Désignation</label>
@@ -94,7 +99,8 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
         ) : (
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <div><span className="text-gray-400">Pôle :</span> <span className="text-white ml-1"><PoleBadge pole={form.pole} /></span></div>
-            <div className="flex items-center justify-between"><span><span className="text-gray-400">Date :</span> <span className="text-white ml-1">{formatDate(form.date)}</span></span> <button onClick={cycleStatut} className="cursor-pointer transition-all" title="Cliquez pour changer le statut"><StatutBadge statut={form.statut} /></button></div>
+            {form.zone && <div><span className="text-gray-400">Zone :</span> <span className="text-white ml-1">{form.zone}</span></div>}
+            <div className="flex items-center justify-between"><span><span className="text-gray-400">Date :</span> <span className="text-white ml-1">{formatDate(form.date)}</span></span> {(isAdmin || isEditor) ? <button onClick={cycleStatut} className="cursor-pointer transition-opacity hover:opacity-70 rounded-full focus:outline-none focus:ring-2 focus:ring-white/40" title="Cliquer pour changer le statut"><StatutBadge statut={form.statut} /></button> : <StatutBadge statut={form.statut} />}</div>
             <div className="col-span-2"><span className="text-gray-400">Désignation :</span> <span className="text-white ml-1">{form.designation}</span></div>
             <div><span className="text-gray-400">Quantité :</span> <span className="text-white ml-1">{form.quantite}</span></div>
             {form.caracteristique && <div className="col-span-2"><span className="text-gray-400">Caractéristique :</span> <span className="text-white ml-1">{form.caracteristique}</span></div>}
@@ -161,8 +167,8 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
                 onClick={async () => {
                   setSaving(true)
                   try {
-                    await onDelete(besoin.id)
-                    onClose()
+                    const { error: delErr } = await onDelete(besoin.id) ?? {}
+                    if (!delErr) onClose()
                   } finally {
                     setSaving(false)
                   }
