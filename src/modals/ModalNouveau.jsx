@@ -45,7 +45,7 @@ export function ModalNouveau({ open, onClose, onSave }) {
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">Pôle</label>
           <select value={form.pole} onChange={e => set('pole', e.target.value)} className="input-dark">
-            {POLES.map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
+            {[...POLES].sort((a, b) => a.label.localeCompare(b.label, 'fr')).map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
           </select>
         </div>
         <div>

@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { Modal } from '../components/ui/Modal'
 import { PoleBadge } from '../components/ui/PoleBadge'
 import { StatutBadge } from '../components/ui/StatutBadge'
+import { BtnCycle } from '../components/ui/buttons'
 import { POLES, STATUTS, formatDate } from '../constants'
 
 export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin, isEditor }) {
@@ -60,7 +61,7 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
             <div>
               <label className="block text-xs text-gray-400 mb-1">Pôle</label>
               <select value={form.pole} onChange={e => set('pole', e.target.value)} className="input-dark">
-                {POLES.map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
+                {[...POLES].sort((a, b) => a.label.localeCompare(b.label, 'fr')).map(p => <option key={p.label} value={p.label} className="bg-gray-800">{p.label}</option>)}
               </select>
             </div>
             <div>
@@ -94,11 +95,19 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <div><span className="text-gray-400">Pôle :</span> <span className="text-white ml-1"><PoleBadge pole={form.pole} /></span></div>
             {form.zone && <div><span className="text-gray-400">Zone :</span> <span className="text-white ml-1">{form.zone}</span></div>}
-            <div className="flex items-center justify-between"><span><span className="text-gray-400">Date :</span> <span className="text-white ml-1">{formatDate(form.date)}</span></span> {(isAdmin || isEditor) ? <button onClick={cycleStatut} className="cursor-pointer transition-opacity hover:opacity-70 rounded-full focus:outline-none focus:ring-2 focus:ring-white/40" title="Cliquer pour changer le statut"><StatutBadge statut={form.statut} /></button> : <StatutBadge statut={form.statut} />}</div>
+            <div className="flex items-center justify-between"><span><span className="text-gray-400">Date :</span> <span className="text-white ml-1">{formatDate(form.date)}</span></span> {(isAdmin || isEditor) ? <BtnCycle onClick={cycleStatut} title="Cliquer pour changer le statut"><StatutBadge statut={form.statut} /></BtnCycle> : <StatutBadge statut={form.statut} />}</div>
             <div className="col-span-2"><span className="text-gray-400">Désignation :</span> <span className="text-white ml-1">{form.designation}</span></div>
             <div><span className="text-gray-400">Quantité :</span> <span className="text-white ml-1">{form.quantite}</span></div>
             {form.caracteristique && <div className="col-span-2"><span className="text-gray-400">Caractéristique :</span> <span className="text-white ml-1">{form.caracteristique}</span></div>}
             {form.usage && <div className="col-span-2"><span className="text-gray-400">Usage :</span> <span className="text-white ml-1">{form.usage}</span></div>}
+          </div>
+        )}
+        {!editing && form.statut !== besoin.statut && (isAdmin || isEditor) && (
+          <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-white/10">
+            <button onClick={() => set('statut', besoin.statut)} className="px-4 py-2 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">Annuler</button>
+            <button onClick={handleSave} disabled={saving} className="px-5 py-2 rounded-lg bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+              {saving ? 'Enregistrement…' : 'Valider'}
+            </button>
           </div>
         )}
       </div>

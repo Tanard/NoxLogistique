@@ -127,7 +127,7 @@ export default function MapPage({ festivalId, isEditor }) {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`,
-        { headers: { 'Accept-Language': 'fr' } }
+        { headers: { 'Accept-Language': 'fr', 'User-Agent': 'Logisticore/1.0' } }
       )
       const data = await res.json()
       if (data[0]) setFlyTo({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })

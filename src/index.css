@@ -2,12 +2,12 @@
 
 @theme {
   --font-sans: system-ui, -apple-system, sans-serif;
-  --color-sidebar: #1E1B2E;
-  --color-card: #3D2C5E;
+  --color-sidebar: #0F0F0F;
+  --color-card: #1C1C1C;
   --color-accent: #7C3AED;
   --color-app-bg: #F8F7FC;
   --color-app-text: #2D2B3A;
-  --color-table-hd: #2D2650;
+  --color-table-hd: #111111;
 }
 
 body {
@@ -23,31 +23,36 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
 
-/* Champ de formulaire — contexte clair */
-.input-light {
-  width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  font-size: 0.875rem;
-  padding: 0.625rem 1rem;
-  color: var(--color-app-text);
-}
-.input-light::placeholder { color: #9ca3af; }
-.input-light:focus { outline: none; box-shadow: 0 0 0 2px var(--color-accent); border-color: transparent; }
+@layer components {
+  /* Champ de formulaire — contexte clair */
+  .input-light {
+    width: 100%;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    font-size: 0.875rem;
+    padding-top: 0.625rem;
+    padding-right: 1rem;
+    padding-bottom: 0.625rem;
+    padding-left: 1rem;
+    color: var(--color-app-text);
+  }
+  .input-light::placeholder { color: #9ca3af; }
+  .input-light:focus { outline: none; box-shadow: 0 0 0 2px var(--color-accent); border-color: transparent; }
 
-/* Champ de formulaire — contexte sombre (modales) */
-.input-dark {
-  width: 100%;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.1);
-  font-size: 0.875rem;
-  padding: 0.625rem 0.75rem;
-  color: #fff;
+  /* Champ de formulaire — contexte sombre (modales) */
+  .input-dark {
+    width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.1);
+    font-size: 0.875rem;
+    padding: 0.625rem 0.75rem;
+    color: #fff;
+  }
+  .input-dark::placeholder { color: #6b7280; }
+  .input-dark:focus { outline: none; box-shadow: 0 0 0 2px var(--color-accent); }
 }
-.input-dark::placeholder { color: #6b7280; }
-.input-dark:focus { outline: none; box-shadow: 0 0 0 2px var(--color-accent); }
 
 /* Badge générique */
 .badge {

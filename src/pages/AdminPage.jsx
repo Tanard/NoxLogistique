@@ -162,7 +162,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
         <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white">
           <table className="w-full" style={{ fontSize: '13px' }}>
             <thead>
-              <tr style={{ backgroundColor: '#2D2650' }}>
+              <tr style={{ backgroundColor: '#111111' }}>
                 <SortableHeader label="Nom / Prénom" sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="Rôle" sortKey="role" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 <th className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3">Festivals</th>

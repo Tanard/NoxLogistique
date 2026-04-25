@@ -20,6 +20,12 @@ const TodoPage = lazy(() => import('./pages/TodoPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 
+const DEFAULT_SORT_CHAIN = [
+  { key: 'statut', dir: 'asc' },
+  { key: 'pole',   dir: 'asc' },
+  { key: 'zone',   dir: 'asc' },
+]
+
 export default function App() {
   const navigate = useNavigate()
 
@@ -29,8 +35,7 @@ export default function App() {
   const [filterPole, setFilterPole] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [sortKey, setSortKey] = useState('statut')
-  const [sortDir, setSortDir] = useState('asc')
+  const [sortChain, setSortChain] = useState(DEFAULT_SORT_CHAIN)
   const [showFestivalSelect, setShowFestivalSelect] = useState(false)
   const [appVisible, setAppVisible] = useState(false)
 
@@ -84,8 +89,7 @@ export default function App() {
       setFilterPole(null)
       setSearchQuery('')
       setSelectedBesoin(null)
-      setSortKey(null)
-      setSortDir('asc')
+      setSortChain(DEFAULT_SORT_CHAIN)
       setShowNew(false)
       setShowNewTodo(false)
       setSelectedTodo(null)
@@ -138,11 +142,15 @@ export default function App() {
   }, [besoins, selectedBesoin])
 
   const handleSort = (key) => {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortKey(key); setSortDir('asc') }
+    setSortChain(prev => {
+      if (prev[0]?.key === key) {
+        return [{ key, dir: prev[0].dir === 'asc' ? 'desc' : 'asc' }, ...prev.slice(1)]
+      }
+      const rest = prev.filter(s => s.key !== key).slice(0, 2)
+      return [{ key, dir: 'asc' }, ...rest]
+    })
   }
 
-  // Fix #3 — nullish coalescing on designation/usage/pole
   const filtered = useMemo(() => {
     let list = besoins.filter(b => {
       if (filterPole && b.pole !== filterPole) return false
@@ -153,23 +161,26 @@ export default function App() {
       return true
     })
     const STATUT_ORDER = { 'En attente': 0, 'Validé': 1, 'Annulé': 2 }
-    if (sortKey) {
-      list = [...list].sort((a, b) => {
-        if (sortKey === 'quantite') {
-          const diff = Number(a[sortKey]) - Number(b[sortKey])
-          return sortDir === 'asc' ? diff : -diff
-        }
-        if (sortKey === 'statut') {
-          const diff = (STATUT_ORDER[a.statut] ?? 99) - (STATUT_ORDER[b.statut] ?? 99)
-          return sortDir === 'asc' ? diff : -diff
-        }
-        const va = String(a[sortKey] ?? '')
-        const vb = String(b[sortKey] ?? '')
-        return sortDir === 'asc' ? va.localeCompare(vb, 'fr') : vb.localeCompare(va, 'fr')
-      })
+    const compareByKey = (a, b, key, dir) => {
+      let result
+      if (key === 'quantite') {
+        result = Number(a[key]) - Number(b[key])
+      } else if (key === 'statut') {
+        result = (STATUT_ORDER[a.statut] ?? 99) - (STATUT_ORDER[b.statut] ?? 99)
+      } else {
+        result = String(a[key] ?? '').localeCompare(String(b[key] ?? ''), 'fr')
+      }
+      return dir === 'asc' ? result : -result
     }
+    list = [...list].sort((a, b) => {
+      for (const { key, dir } of sortChain) {
+        const r = compareByKey(a, b, key, dir)
+        if (r !== 0) return r
+      }
+      return 0
+    })
     return list
-  }, [besoins, filterPole, searchQuery, sortKey, sortDir])
+  }, [besoins, filterPole, searchQuery, sortChain])
 
   const addBesoin = async (data) => {
     const { error } = await addBesoinDB(data)
@@ -226,18 +237,6 @@ export default function App() {
     )
   }
 
-  const cycleStatutBesoin = async (b) => {
-    const STATUTS_ORDER = ['En attente', 'Validé', 'Annulé']
-    const idx = STATUTS_ORDER.indexOf(b.statut)
-    await updateBesoin({ ...b, statut: STATUTS_ORDER[(idx + 1) % STATUTS_ORDER.length] })
-  }
-
-  const cycleStatutTodo = async (t) => {
-    const STATUTS_ORDER = ['À faire', 'En cours', 'Terminé']
-    const idx = STATUTS_ORDER.indexOf(t.statut)
-    await updateTodo({ ...t, statut: STATUTS_ORDER[(idx + 1) % STATUTS_ORDER.length] })
-  }
-
   return (
     <div
       className="flex h-screen overflow-hidden transition-opacity duration-400"
@@ -273,13 +272,12 @@ export default function App() {
                 setFilterPole={setFilterPole}
                 searchQuery={searchQuery}
                 setSearchQuery={setSearchQuery}
-                sortKey={sortKey}
-                sortDir={sortDir}
+                sortKey={sortChain[0]?.key}
+                sortDir={sortChain[0]?.dir}
                 handleSort={handleSort}
                 setSelectedBesoin={setSelectedBesoin}
                 setShowNew={setShowNew}
                 setShowFestivalSelect={setShowFestivalSelect}
-                onCycleStatut={cycleStatutBesoin}
               />
             }
           />
@@ -294,7 +292,6 @@ export default function App() {
                 setSearchQuery={setTodoSearch}
                 setShowNew={setShowNewTodo}
                 setSelectedTodo={setSelectedTodo}
-                onCycleStatut={cycleStatutTodo}
                 user={user}
                 isAdmin={isAdmin}
                 activeFestival={activeFestival}

@@ -37,10 +37,9 @@ export default function DashboardPage({
   setSelectedBesoin,
   setShowNew,
   setShowFestivalSelect,
-  onCycleStatut,
 }) {
   const [currentPage, setCurrentPage] = useState(1)
-  useEffect(() => { setCurrentPage(1) }, [filtered])
+  useEffect(() => { setCurrentPage(1) }, [filterPole, searchQuery])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -149,17 +148,7 @@ export default function DashboardPage({
                 <td className="px-4 py-1.5 font-medium text-app-text">{b.designation}</td>
                 <td className="px-4 py-1.5 text-center text-app-text">{b.quantite}</td>
                 <td className="px-4 py-1.5">
-                  {(isAdmin || isEditor) && onCycleStatut ? (
-                    <button
-                      onClick={e => { e.stopPropagation(); onCycleStatut(b) }}
-                      className="cursor-pointer transition-opacity hover:opacity-70 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-300"
-                      title="Cliquer pour changer le statut"
-                    >
-                      <StatutBadge statut={b.statut} />
-                    </button>
-                  ) : (
-                    <StatutBadge statut={b.statut} />
-                  )}
+                  <StatutBadge statut={b.statut} />
                 </td>
               </tr>
             ))}
@@ -203,16 +192,7 @@ export default function DashboardPage({
           >
             <div className="flex items-center justify-between mb-2">
               <PoleBadge pole={b.pole} />
-              {(isAdmin || isEditor) && onCycleStatut ? (
-                <button
-                  onClick={e => { e.stopPropagation(); onCycleStatut(b) }}
-                  className="cursor-pointer transition-opacity hover:opacity-70"
-                >
-                  <StatutBadge statut={b.statut} />
-                </button>
-              ) : (
-                <StatutBadge statut={b.statut} />
-              )}
+              <StatutBadge statut={b.statut} />
             </div>
             <h3 className="text-sm font-bold mb-1 text-app-text">{b.designation}</h3>
             <div className="flex items-center justify-between text-xs text-gray-500">

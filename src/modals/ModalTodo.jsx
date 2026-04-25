@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Pencil, Trash2, Check, X } from 'lucide-react'
 import { Modal } from '../components/ui/Modal'
+import { BtnCycle } from '../components/ui/buttons'
 import { TodoStatutBadge } from '../components/ui/TodoStatutBadge'
 import { TODO_STATUTS, cycleTodoStatut } from '../constants'
 
@@ -93,14 +94,9 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Statut</span>
           {editing ? (
-            <button
-              type="button"
-              onClick={() => set('statut', cycleTodoStatut(form.statut))}
-              aria-label="Changer le statut"
-              className="transition-opacity hover:opacity-80"
-            >
+            <BtnCycle onClick={() => set('statut', cycleTodoStatut(form.statut))} title="Changer le statut">
               <TodoStatutBadge statut={form.statut} />
-            </button>
+            </BtnCycle>
           ) : (
             <TodoStatutBadge statut={form.statut} />
           )}

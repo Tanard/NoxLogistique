@@ -21,7 +21,6 @@ export default function TodoPage({
   setSearchQuery,
   setShowNew,
   setSelectedTodo,
-  onCycleStatut,
   user,
   isAdmin,
   activeFestival,
@@ -143,17 +142,7 @@ export default function TodoPage({
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      {onCycleStatut ? (
-                        <button
-                          onClick={e => { e.stopPropagation(); onCycleStatut(t) }}
-                          className="cursor-pointer transition-opacity hover:opacity-70 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-300"
-                          title="Cliquer pour changer le statut"
-                        >
-                          <TodoStatutBadge statut={t.statut} />
-                        </button>
-                      ) : (
-                        <TodoStatutBadge statut={t.statut} />
-                      )}
+                      <TodoStatutBadge statut={t.statut} />
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs max-w-[300px] truncate">
                       {t.description || <span className="italic">—</span>}
@@ -180,16 +169,7 @@ export default function TodoPage({
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <h3 className="text-sm font-bold leading-snug text-app-text">{t.titre}</h3>
-                  {onCycleStatut ? (
-                    <button
-                      onClick={e => { e.stopPropagation(); onCycleStatut(t) }}
-                      className="cursor-pointer transition-opacity hover:opacity-70"
-                    >
-                      <TodoStatutBadge statut={t.statut} />
-                    </button>
-                  ) : (
-                    <TodoStatutBadge statut={t.statut} />
-                  )}
+                  <TodoStatutBadge statut={t.statut} />
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   <User size={12} />

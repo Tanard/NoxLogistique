@@ -279,7 +279,7 @@ export function ModalUser({
                     className="flex-1 rounded-lg border border-white/20 bg-white/10 text-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
                   >
                     <option value="" className="bg-gray-900">— Festival —</option>
-                    {availableFestivals.map(f => (
+                    {[...availableFestivals].sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(f => (
                       <option key={f.id} value={f.id} className="bg-gray-900">{f.name}</option>
                     ))}
                   </select>

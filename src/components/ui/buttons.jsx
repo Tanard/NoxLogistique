@@ -50,3 +50,17 @@ export function BtnSoft({ children, onClick, disabled, icon: Icon }) {
     </button>
   )
 }
+
+export function BtnCycle({ children, onClick, title, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="cursor-pointer transition-opacity hover:opacity-70 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-400/40 disabled:opacity-40"
+    >
+      {children}
+    </button>
+  )
+}
