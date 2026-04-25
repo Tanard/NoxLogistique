@@ -4,7 +4,6 @@ import { TodoStatutBadge } from '../components/ui/TodoStatutBadge'
 import { SortableHeader } from '../components/ui/SortableHeader'
 import { PageLayout, PageHeader } from '../components/ui/PageLayout'
 import { TopBar } from '../components/ui/TopBar'
-import { COLORS, TODO_STATUTS } from '../constants'
 
 const STATUT_ORDER = { 'À faire': 0, 'En cours': 1, 'Terminé': 2 }
 
@@ -57,8 +56,8 @@ export default function TodoPage({
           if (va > vb) return sortDir === 'asc' ? 1 : -1
           return 0
         }
-        va = String(a[sortKey]).toLowerCase()
-        vb = String(b[sortKey]).toLowerCase()
+        va = String(a[sortKey] ?? '').toLowerCase()
+        vb = String(b[sortKey] ?? '').toLowerCase()
         if (va < vb) return sortDir === 'asc' ? -1 : 1
         if (va > vb) return sortDir === 'asc' ? 1 : -1
         return 0
@@ -82,8 +81,7 @@ export default function TodoPage({
         {isEditor && (
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity flex-shrink-0"
-            style={{ backgroundColor: COLORS.accent }}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity flex-shrink-0"
           >
             <Plus size={18} />
             Créer une tâche
@@ -96,8 +94,7 @@ export default function TodoPage({
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Rechercher une tâche, un assigné..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
-            style={{ color: COLORS.textDark }}
+            className="input-light pl-10"
           />
         </div>
         {!loading && (
@@ -111,11 +108,10 @@ export default function TodoPage({
         <div className="flex justify-center py-20 text-gray-400 text-sm">Chargement…</div>
       ) : (
         <>
-          {/* Tableau desktop */}
           <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white">
             <table className="w-full" style={{ fontSize: '13px' }}>
               <thead>
-                <tr style={{ backgroundColor: COLORS.tableHeader }}>
+                <tr className="bg-table-hd">
                   {COLUMNS.map(col => (
                     <SortableHeader
                       key={col.key}
@@ -139,11 +135,9 @@ export default function TodoPage({
                     className="cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100"
                     style={i % 2 === 0 ? {} : { backgroundColor: '#FAFAF8' }}
                   >
-                    <td className="px-4 py-3 font-semibold max-w-[240px]" style={{ color: COLORS.textDark }}>
-                      {t.titre}
-                    </td>
+                    <td className="px-4 py-3 font-semibold max-w-[240px] text-app-text">{t.titre}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 text-sm" style={{ color: COLORS.textDark }}>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-app-text">
                         <User size={13} className="text-gray-400 flex-shrink-0" />
                         {t.assignee || <span className="text-gray-400 italic">—</span>}
                       </span>
@@ -177,16 +171,15 @@ export default function TodoPage({
             </table>
           </div>
 
-          {/* Cartes mobile */}
           <div className="md:hidden space-y-3">
             {filtered.map(t => (
               <div
                 key={t.id}
                 onClick={() => setSelectedTodo(t)}
-                className="rounded-xl p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-transform bg-white"
+                className="rounded-xl p-4 shadow-sm cursor-pointer bg-white"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <h3 className="text-sm font-bold leading-snug" style={{ color: COLORS.textDark }}>{t.titre}</h3>
+                  <h3 className="text-sm font-bold leading-snug text-app-text">{t.titre}</h3>
                   {onCycleStatut ? (
                     <button
                       onClick={e => { e.stopPropagation(); onCycleStatut(t) }}

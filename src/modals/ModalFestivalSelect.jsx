@@ -1,5 +1,4 @@
 import { Calendar } from 'lucide-react'
-import { COLORS } from '../constants'
 
 export function ModalFestivalSelect({ open, onClose, festivals, selectedId, onSelect }) {
   if (!open) return null
@@ -10,12 +9,11 @@ export function ModalFestivalSelect({ open, onClose, festivals, selectedId, onSe
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => onClose()}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-md rounded-2xl shadow-2xl p-6"
-        style={{ backgroundColor: COLORS.sidebar }}
+        className="relative w-full max-w-md rounded-2xl shadow-2xl p-6 bg-sidebar"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 mb-6">
-          <Calendar size={22} style={{ color: COLORS.accent }} />
+          <Calendar size={22} className="text-accent" />
           <h2 className="text-lg font-bold text-white">Sélectionner un festival</h2>
         </div>
 
@@ -32,16 +30,16 @@ export function ModalFestivalSelect({ open, onClose, festivals, selectedId, onSe
           <div className="space-y-2">
             {festivals.map(f => {
               const isActive = f.id === selectedId
+              const roleColor = f.role === 'admin' ? 'var(--color-accent)' : f.role === 'pole_manager' ? '#F472B6' : '#6B7280'
               const roleLabel = f.role === 'admin' ? 'Admin' : f.role === 'pole_manager' ? 'Responsable pôle' : 'Viewer'
-              const roleColor = f.role === 'admin' ? COLORS.accent : f.role === 'pole_manager' ? '#F472B6' : '#6B7280'
               return (
                 <button
                   key={f.id}
                   onClick={() => { onSelect(f.id); onClose() }}
-                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all text-left"
+                  className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-colors text-left"
                   style={{
-                    backgroundColor: isActive ? COLORS.accent + '25' : 'rgba(255,255,255,0.06)',
-                    border: `1px solid ${isActive ? COLORS.accent : 'rgba(255,255,255,0.1)'}`,
+                    backgroundColor: isActive ? 'color-mix(in srgb, var(--color-accent) 25%, transparent)' : 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)'}`,
                   }}
                 >
                   <div>

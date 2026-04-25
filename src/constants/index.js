@@ -10,15 +10,6 @@ import {
   Map,
 } from 'lucide-react'
 
-export const COLORS = {
-  sidebar: '#1E1B2E',
-  card: '#3D2C5E',
-  accent: '#7C3AED',
-  bg: '#F8F7FC',
-  textDark: '#2D2B3A',
-  tableHeader: '#2D2650',
-}
-
 export const POLES = [
   { label: 'Bénévole', icon: Users, color: '#8B5CF6' },
   { label: 'Restauration', icon: UtensilsCrossed, color: '#F472B6' },

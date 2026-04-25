@@ -44,7 +44,7 @@ Guide pas-à-pas pour activer la base de données Supabase (temps réel + auth +
    - **Project URL** : `https://xxxxx.supabase.co`
    - **anon public** key : `eyJhbGc...` (clé publique, safe côté client)
 
-3. Dans le dossier `nox-app/`, crée un fichier `.env` :
+3. Dans le dossier `Logisticore/`, crée un fichier `.env` :
 
 ```bash
 VITE_SUPABASE_URL=https://TON_PROJECT_ID.supabase.co
@@ -69,7 +69,7 @@ Par défaut, Supabase exige la confirmation email. Pour tester rapidement :
 ## 5. Lancer l'app
 
 ```bash
-cd nox-app
+cd Logisticore
 npm install    # @supabase/supabase-js déjà installé
 npm run dev
 ```
@@ -131,7 +131,7 @@ auth.users (Supabase géré)
 ## Problèmes fréquents
 
 **❌ "Variables manquantes dans .env"**
-→ Le fichier `.env` n'est pas à la racine de `nox-app/`, ou le dev server n'a pas été relancé après création du fichier. Kill le serveur (`Ctrl+C`) et relance.
+→ Le fichier `.env` n'est pas à la racine de `Logisticore/`, ou le dev server n'a pas été relancé après création du fichier. Kill le serveur (`Ctrl+C`) et relance.
 
 **❌ "permission denied for table besoins"**
 → Tu n'es pas connecté, ou tu n'es pas membre du festival. Vérifie dans `festival_members` que ta ligne existe avec le bon `festival_id`.

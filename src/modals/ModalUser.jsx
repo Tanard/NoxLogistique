@@ -2,22 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import { Modal } from '../components/ui/Modal'
 import { ErrorBlock } from '../components/ui/ErrorBlock'
 import { parseError } from '../lib/errors'
-import { ROLE_CONFIG, COLORS } from '../constants'
+import { ROLE_CONFIG } from '../constants'
 import { Trash2, Plus, Mail, UserCircle2, X } from 'lucide-react'
 
 const ROLES = ['admin', 'pole_manager', 'viewer']
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Sous-composant : ligne d'une appartenance festival
-// Travaille sur les données locales (pas de DB avant Valider)
-// ─────────────────────────────────────────────────────────────────────────────
 function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
   const rc = ROLE_CONFIG[membership.role] ?? ROLE_CONFIG.viewer
 
   const cycleRole = () => {
     const idx = ROLES.indexOf(membership.role)
-    const nextRole = ROLES[(idx + 1) % ROLES.length]
-    onRoleChange(nextRole)
+    onRoleChange(ROLES[(idx + 1) % ROLES.length])
   }
 
   return (
@@ -26,7 +21,7 @@ function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
       <button
         onClick={cycleRole}
         disabled={saving}
-        className="px-2.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer hover:opacity-80 disabled:opacity-40"
+        className="badge border cursor-pointer hover:opacity-80 disabled:opacity-40 transition-opacity"
         style={{ backgroundColor: rc.bg, color: rc.text, borderColor: rc.border }}
         title="Cliquez pour changer le rôle"
       >
@@ -44,39 +39,26 @@ function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Modal principale
-// ─────────────────────────────────────────────────────────────────────────────
 export function ModalUser({
   open, onClose, mode = 'edit',
   user, festivals = [],
-  // Opérations edit (mutations pures — pas de reload interne)
   updateRole, addMembership, removeMembership, deleteUser, sendPasswordReset,
-  // Appelé après sauvegarde réussie — AdminPage fait le reload + sync
   onSaved,
-  // Opération create
   createUser,
   showToast,
 }) {
-  // ── État formulaire création ───────────────────────────────────────────────
   const [createForm, setCreateForm] = useState({ email: '', fullName: '' })
   const [createError, setCreateError] = useState(null)
   const [saving, setSaving] = useState(false)
 
-  // ── État local des memberships (mode edit) ─────────────────────────────────
-  // Toutes les modifications (rôle, ajout, retrait) restent locales
-  // jusqu'au clic sur "Valider" — aucune requête DB avant ce moment.
   const [localMemberships, setLocalMemberships] = useState([])
-  const originalRef = useRef([])  // snapshot au moment de l'ouverture pour le diff
+  const originalRef = useRef([])
 
-  // ── État ajout festival ────────────────────────────────────────────────────
   const [addFestivalId, setAddFestivalId]     = useState('')
   const [addFestivalRole, setAddFestivalRole] = useState('viewer')
 
-  // ── État confirmation suppression ─────────────────────────────────────────
   const [confirmDelete, setConfirmDelete] = useState(false)
 
-  // Reset complet à chaque ouverture / changement d'utilisateur
   useEffect(() => {
     if (open) {
       setCreateForm({ email: '', fullName: '' })
@@ -92,11 +74,9 @@ export function ModalUser({
     }
   }, [open, user?.id])
 
-  // Festivals disponibles pour l'ajout (basé sur l'état local, pas la DB)
   const alreadyIn = new Set(localMemberships.map(m => m.festivalId))
   const availableFestivals = festivals.filter(f => !alreadyIn.has(f.id))
 
-  // ── Mutations locales (pas de DB) ──────────────────────────────────────────
   const handleLocalRoleChange = (festivalId, newRole) => {
     setLocalMemberships(prev =>
       prev.map(m => m.festivalId === festivalId ? { ...m, role: newRole } : m)
@@ -118,7 +98,6 @@ export function ModalUser({
     setAddFestivalRole('viewer')
   }
 
-  // ── Mode création ──────────────────────────────────────────────────────────
   const handleCreate = async () => {
     const { email, fullName } = createForm
     if (!email.trim()) return setCreateError({ message: "L'email est obligatoire.", code: null })
@@ -138,7 +117,6 @@ export function ModalUser({
     }
   }
 
-  // ── Mode édition : sauvegarde diff au clic "Valider" ──────────────────────
   const handleSave = async () => {
     setSaving(true)
     try {
@@ -146,7 +124,6 @@ export function ModalUser({
       const current  = localMemberships
       let hasError   = false
 
-      // Festivals retirés
       for (const m of original) {
         if (!current.find(c => c.festivalId === m.festivalId)) {
           const { error } = await removeMembership(user.id, m.festivalId)
@@ -154,7 +131,6 @@ export function ModalUser({
         }
       }
 
-      // Festivals ajoutés
       for (const m of current) {
         if (!original.find(o => o.festivalId === m.festivalId)) {
           const { error } = await addMembership(user.id, m.festivalId, m.role)
@@ -162,7 +138,6 @@ export function ModalUser({
         }
       }
 
-      // Rôles modifiés
       for (const m of current) {
         const orig = original.find(o => o.festivalId === m.festivalId)
         if (orig && orig.role !== m.role) {
@@ -177,14 +152,13 @@ export function ModalUser({
         showToast?.('Modifications enregistrées', 'success')
       }
 
-      onSaved?.(user.id)  // AdminPage recharge la liste et re-sync l'utilisateur sélectionné
+      onSaved?.(user.id)
       onClose()
     } finally {
       setSaving(false)
     }
   }
 
-  // ── Suppression immédiate (action irréversible, pas de "Valider") ──────────
   const handleDelete = async () => {
     setSaving(true)
     try {
@@ -196,7 +170,6 @@ export function ModalUser({
     }
   }
 
-  // ── Reset mot de passe (action immédiate) ──────────────────────────────────
   const handleSendReset = async () => {
     if (!user?.email || user.email === '—') return
     setSaving(true)
@@ -214,9 +187,6 @@ export function ModalUser({
   return (
     <Modal open={open} onClose={onClose} title={title}>
 
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/* MODE CRÉATION                                                       */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
       {mode === 'create' && (
         <div className="space-y-4">
           <p className="text-sm text-gray-400">
@@ -231,7 +201,7 @@ export function ModalUser({
               value={createForm.email}
               onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
               placeholder="prenom.nom@entreprise.com"
-              className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+              className="input-dark"
               autoFocus
             />
           </div>
@@ -243,24 +213,20 @@ export function ModalUser({
               value={createForm.fullName}
               onChange={e => setCreateForm(f => ({ ...f, fullName: e.target.value }))}
               placeholder="Nom Prénom"
-              className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+              className="input-dark"
             />
           </div>
 
           <ErrorBlock message={createError?.message} code={createError?.code} />
 
           <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
-            <button
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors"
-            >
+            <button onClick={onClose} className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">
               Annuler
             </button>
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: COLORS.accent }}
+              className="px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? 'Envoi…' : 'Envoyer l\'invitation'}
             </button>
@@ -268,19 +234,12 @@ export function ModalUser({
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════════════════ */}
-      {/* MODE ÉDITION                                                        */}
-      {/* ════════════════════════════════════════════════════════════════════ */}
       {mode === 'edit' && user && (
         <>
-          {/* ── Identité ── */}
-          <div className="rounded-xl p-4 mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+          <div className="rounded-xl p-4 mb-5 bg-white/5">
             <div className="flex items-center gap-3">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: COLORS.accent + '30' }}
-              >
-                <UserCircle2 size={22} style={{ color: COLORS.accent }} />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-accent/30">
+                <UserCircle2 size={22} className="text-accent" />
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-white truncate">{user.fullName}</p>
@@ -289,8 +248,7 @@ export function ModalUser({
             </div>
           </div>
 
-          {/* ── Accès festivals (état local) ── */}
-          <div className="rounded-xl p-4 mb-5" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+          <div className="rounded-xl p-4 mb-5 bg-white/5">
             <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">
               Accès festivals
             </h3>
@@ -311,7 +269,6 @@ export function ModalUser({
               </div>
             )}
 
-            {/* Ajouter un festival */}
             {availableFestivals.length > 0 && (
               <div className="mt-4 pt-4 border-t border-white/10">
                 <p className="text-xs text-gray-400 mb-2 font-medium">Ajouter un accès</p>
@@ -319,7 +276,7 @@ export function ModalUser({
                   <select
                     value={addFestivalId}
                     onChange={e => setAddFestivalId(e.target.value)}
-                    className="flex-1 rounded-lg border border-white/20 bg-white/10 text-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+                    className="flex-1 rounded-lg border border-white/20 bg-white/10 text-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
                   >
                     <option value="" className="bg-gray-900">— Festival —</option>
                     {availableFestivals.map(f => (
@@ -329,8 +286,7 @@ export function ModalUser({
                   <button
                     onClick={handleLocalAdd}
                     disabled={!addFestivalId || saving}
-                    className="p-1.5 rounded-lg text-white hover:opacity-80 transition-opacity disabled:opacity-40"
-                    style={{ backgroundColor: COLORS.accent }}
+                    className="p-1.5 rounded-lg bg-accent text-white hover:opacity-80 transition-opacity disabled:opacity-40"
                     title="Ajouter"
                   >
                     <Plus size={16} />
@@ -345,7 +301,7 @@ export function ModalUser({
                       <button
                         key={r}
                         onClick={() => setAddFestivalRole(r)}
-                        className="px-2 py-1 rounded-full text-xs font-semibold border transition-all"
+                        className="badge border transition-opacity"
                         style={{
                           backgroundColor: isSelected ? rc.bg : 'transparent',
                           color: rc.text,
@@ -362,9 +318,7 @@ export function ModalUser({
             )}
           </div>
 
-          {/* ── Actions ── */}
           <div className="flex items-center justify-between pt-4 border-t border-white/10">
-            {/* Suppression (immédiate et irréversible) */}
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
@@ -393,13 +347,11 @@ export function ModalUser({
               </div>
             )}
 
-            {/* Reset mot de passe (immédiat) + Valider (enregistre tout) */}
             <div className="flex items-center gap-2">
               <button
                 onClick={handleSendReset}
                 disabled={saving || !user.email || user.email === '—'}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
-                style={{ color: COLORS.accent, backgroundColor: COLORS.accent + '15' }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-accent bg-accent/10 hover:bg-accent/20 transition-colors disabled:opacity-40"
                 title="Envoie un email avec un lien de réinitialisation"
               >
                 <Mail size={14} />
@@ -408,8 +360,7 @@ export function ModalUser({
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-5 py-2 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: COLORS.accent }}
+                className="px-5 py-2 rounded-lg bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? 'Enregistrement…' : 'Valider'}
               </button>

@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react'
-import { COLORS } from '../constants'
 
 export function LoadingScreen({ onDone }) {
   const [filledSquares, setFilledSquares] = useState([])
   const [fadeOut, setFadeOut] = useState(false)
 
   useEffect(() => {
-    const interval = 1300 / 10 // 130ms par carré, uniforme
+    const interval = 1300 / 10
     const timeouts = []
     for (let i = 0; i < 10; i++) {
-      const t = setTimeout(() => {
-        setFilledSquares(prev => [...prev, i])
-      }, (i + 1) * interval)
+      const t = setTimeout(() => setFilledSquares(prev => [...prev, i]), (i + 1) * interval)
       timeouts.push(t)
     }
     return () => timeouts.forEach(clearTimeout)
@@ -33,14 +30,9 @@ export function LoadingScreen({ onDone }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center"
-      style={{
-        backgroundColor: '#fff',
-        opacity: fadeOut ? 0 : 1,
-        transition: 'opacity 0.5s ease',
-      }}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white transition-opacity duration-500"
+      style={{ opacity: fadeOut ? 0 : 1 }}
     >
-      {/* 10 carrés sur une ligne, remplissage gauche → droite */}
       <div style={{ display: 'flex', gap: '6px' }}>
         {Array.from({ length: 10 }).map((_, i) => (
           <div
@@ -48,8 +40,8 @@ export function LoadingScreen({ onDone }) {
             style={{
               width: '28px',
               height: '28px',
-              backgroundColor: filledSquares.includes(i) ? COLORS.accent : '#E5E5E5',
-              border: `2px solid ${COLORS.textDark}`,
+              backgroundColor: filledSquares.includes(i) ? 'var(--color-accent)' : '#E5E5E5',
+              border: '2px solid var(--color-app-text)',
               transition: 'background-color 0.1s',
             }}
           />
@@ -57,7 +49,7 @@ export function LoadingScreen({ onDone }) {
       </div>
       <p style={{
         marginTop: '20px',
-        color: COLORS.textDark,
+        color: 'var(--color-app-text)',
         fontSize: '13px',
         fontFamily: "'Courier New', monospace",
         letterSpacing: '4px',

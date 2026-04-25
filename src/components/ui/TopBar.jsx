@@ -1,5 +1,4 @@
 import { LogOut, Calendar } from 'lucide-react'
-import { COLORS } from '../../constants'
 import { BtnSoft } from './buttons'
 
 export function TopBar({ user, isAdmin, activeFestival, onFestivalClick, onSignOut }) {
@@ -8,14 +7,11 @@ export function TopBar({ user, isAdmin, activeFestival, onFestivalClick, onSignO
       <BtnSoft icon={Calendar} onClick={onFestivalClick} title="Changer de festival">
         {activeFestival?.name ?? 'Festival'}
       </BtnSoft>
-      <span className="text-sm font-medium" style={{ color: COLORS.textDark }}>
+      <span className="text-sm font-medium text-app-text">
         <span className="text-gray-500">Connecté :</span>{' '}
         {user?.user_metadata?.full_name || user?.email}
         {isAdmin && (
-          <span
-            className="ml-2 px-2 py-0.5 rounded text-xs font-bold text-white"
-            style={{ backgroundColor: COLORS.accent }}
-          >
+          <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold text-white bg-accent">
             Admin
           </span>
         )}

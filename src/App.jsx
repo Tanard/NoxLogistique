@@ -240,12 +240,8 @@ export default function App() {
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
-      style={{
-        fontFamily: "'Inter', system-ui, sans-serif",
-        opacity: appVisible ? 1 : 0,
-        transition: 'opacity 0.4s ease',
-      }}
+      className="flex h-screen overflow-hidden transition-opacity duration-400"
+      style={{ opacity: appVisible ? 1 : 0 }}
     >
       <Sidebar
         sidebarOpen={sidebarOpen}

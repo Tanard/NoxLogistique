@@ -84,6 +84,7 @@ Logistique événementielle multi-festivals. Gestion des besoins matériels par 
 | 2026-04-21 | Design system + standardisation | buttons.jsx, DeleteConfirm.jsx, SortableHeader.jsx, TopBar.jsx, PageLayout.jsx, RoleBadge.jsx | Composants UI partagés |
 | 2026-04-21 | Standardisation pages + corrections | App.jsx, DashboardPage.jsx, TodoPage.jsx, AdminPage.jsx, ModalDetail.jsx, ModalNouveau.jsx, ModalTodo.jsx, supabase.js, useFestivalMembers.js | TopBar sur toutes les pages, SortableHeader Admin, tri par défaut (besoins=pôle, admin=rôle, todo=statut), StatusCycler en liste, Zone sur les besoins, assigné optionnel + autocomplétion todo |
 | 2026-04-21 | Migration React Router v6 | package.json, main.jsx, App.jsx, Sidebar.jsx | Routes URL, lazy loading pages, NavLink sidebar, protection route /admin |
+| 2026-04-21 | Corrections audit (points 5-8) | AdminPage.jsx, Modal.jsx, TodoPage.jsx | AdminPage migré sur PageLayout ; aria-label="Fermer" sur Modal ; zébrage aligné sur i%2===0 ; guard ?? '' sur tri TodoPage |
 
 ## Décisions techniques
 

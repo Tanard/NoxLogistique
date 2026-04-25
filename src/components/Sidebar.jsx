@@ -1,30 +1,26 @@
 import { Menu } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
-import { NAV_ITEMS, COLORS } from '../constants'
+import { NAV_ITEMS } from '../constants'
 
 const NAV_PATH = { general: '/dashboard', todo: '/todo', map: '/map', admin: '/admin' }
 
 export function Sidebar({ sidebarOpen, setSidebarOpen, activeFestival, loadingFestivals, user, isAdmin, onFestivalClick }) {
   return (
     <>
-      {/* Mobile hamburger */}
       <button
         onClick={() => setSidebarOpen(true)}
         aria-label="Ouvrir le menu"
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg text-white shadow-lg"
-        style={{ backgroundColor: COLORS.sidebar }}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg text-white shadow-lg bg-sidebar"
       >
         <Menu size={22} />
       </button>
 
-      {/* Sidebar overlay mobile */}
       {sidebarOpen && (
         <div className="md:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
       )}
 
       <aside
-        className={`fixed md:static z-40 top-0 left-0 h-full w-64 flex-shrink-0 flex flex-col transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ backgroundColor: COLORS.sidebar }}
+        className={`fixed md:static z-40 top-0 left-0 h-full w-64 flex-shrink-0 flex flex-col bg-sidebar transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-6 pb-2">
           <div className="flex items-center gap-2.5 mb-2.5">
@@ -38,7 +34,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, activeFestival, loadingFe
           </div>
           <button
             onClick={() => user && onFestivalClick()}
-            className="text-sm font-semibold text-white truncate text-left transition-opacity hover:opacity-70 w-full"
+            className="text-sm font-semibold text-white truncate text-left hover:opacity-70 transition-opacity w-full"
             title={user ? 'Changer de festival' : ''}
           >
             {activeFestival?.name ?? (user ? (loadingFestivals ? 'Chargement…' : 'Aucun festival') : '—')}
@@ -51,9 +47,8 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, activeFestival, loadingFe
               to={NAV_PATH[item.id]}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all mb-1 ${isActive ? 'text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`
+                `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors mb-1 ${isActive ? 'text-white bg-accent/20 border-l-[3px] border-accent' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`
               }
-              style={({ isActive }) => isActive ? { backgroundColor: COLORS.accent + '20', color: '#fff', borderLeft: `3px solid ${COLORS.accent}` } : {}}
             >
               <item.icon size={18} />
               {item.label}

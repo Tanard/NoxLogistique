@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import { Pencil, Trash2, Check, X } from 'lucide-react'
 import { Modal } from '../components/ui/Modal'
 import { TodoStatutBadge } from '../components/ui/TodoStatutBadge'
-import { TODO_STATUTS, COLORS, cycleTodoStatut } from '../constants'
+import { TODO_STATUTS, cycleTodoStatut } from '../constants'
 
-// #10 : statut initial tiré de la constante, pas d'un literal hardcodé
 const EMPTY_FORM = { titre: '', assignee: '', description: '', statut: TODO_STATUTS[0].label }
 
 function Field({ label, children }) {
@@ -15,30 +14,6 @@ function Field({ label, children }) {
       </label>
       {children}
     </div>
-  )
-}
-
-function InputField({ value, onChange, placeholder }) {
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
-    />
-  )
-}
-
-function TextareaField({ value, onChange, placeholder }) {
-  return (
-    <textarea
-      rows={3}
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent resize-none"
-    />
   )
 }
 
@@ -80,7 +55,6 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
       const payload = { ...form, titre, assignee }
       if (isNew) {
         const { error } = await onSave(payload)
-        // #2 : afficher l'erreur dans la modal, pas seulement le toast global
         if (error) { setError(error.message || 'Erreur lors de la sauvegarde'); return }
       } else {
         const { error } = await onUpdate({ ...todo, ...payload })
@@ -134,7 +108,13 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
 
         <Field label="Tâche *">
           {editing ? (
-            <InputField value={form.titre} onChange={v => set('titre', v)} placeholder="Intitulé de la tâche" />
+            <input
+              type="text"
+              value={form.titre}
+              onChange={e => set('titre', e.target.value)}
+              placeholder="Intitulé de la tâche"
+              className="input-dark"
+            />
           ) : (
             <p className="text-white text-sm font-medium py-2">{form.titre || '—'}</p>
           )}
@@ -149,7 +129,7 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                 value={form.assignee}
                 onChange={e => set('assignee', e.target.value)}
                 placeholder="Nom de la personne (optionnel)"
-                className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
+                className="input-dark"
               />
               <datalist id="assignee-members">
                 {festivalMembers.map(name => <option key={name} value={name} />)}
@@ -162,7 +142,13 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
 
         <Field label="Description">
           {editing ? (
-            <TextareaField value={form.description} onChange={v => set('description', v)} placeholder="Détails optionnels..." />
+            <textarea
+              rows={3}
+              value={form.description}
+              onChange={e => set('description', e.target.value)}
+              placeholder="Détails optionnels..."
+              className="input-dark resize-none"
+            />
           ) : (
             <p className="text-gray-300 text-sm py-2 whitespace-pre-wrap">
               {form.description || <span className="text-gray-500 italic">Aucune description</span>}
@@ -181,7 +167,6 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                   <button
                     onClick={handleDelete}
                     disabled={saving}
-                    aria-label="Confirmer la suppression"
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors"
                   >
                     <Trash2 size={13} /> Supprimer
@@ -197,7 +182,6 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                 <button
                   onClick={handleDelete}
                   disabled={saving}
-                  aria-label="Supprimer la tâche"
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
                 >
                   <Trash2 size={13} /> Supprimer
@@ -210,7 +194,6 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
             {!editing && (isAdmin || isEditor) && (
               <button
                 onClick={() => setEditing(true)}
-                aria-label="Modifier la tâche"
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-white/10 transition-colors"
               >
                 <Pencil size={14} /> Modifier
@@ -228,8 +211,7 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl text-sm font-bold text-white shadow-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
-                  style={{ backgroundColor: COLORS.accent }}
+                  className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-accent text-sm font-bold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   <Check size={14} /> {saving ? 'Enregistrement…' : 'Valider'}
                 </button>

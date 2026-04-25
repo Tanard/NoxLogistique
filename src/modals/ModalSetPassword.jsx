@@ -3,14 +3,8 @@ import { Modal } from '../components/ui/Modal'
 import { PasswordInput } from '../components/ui/PasswordInput'
 import { ErrorBlock } from '../components/ui/ErrorBlock'
 import { parseError } from '../lib/errors'
-import { COLORS } from '../constants'
 import { KeyRound } from 'lucide-react'
 
-/**
- * Affiché quand un utilisateur arrive via un lien d'invitation ou de réinitialisation.
- * Il doit définir (ou redéfinir) son mot de passe avant d'accéder à l'app.
- * La modal ne peut pas être fermée — l'action est obligatoire.
- */
 export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false }) {
   const [password, setPasswordVal]   = useState('')
   const [confirm, setConfirm]        = useState('')
@@ -34,17 +28,12 @@ export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false
   const title = isRecovery ? 'Nouveau mot de passe' : 'Activer votre compte'
 
   return (
-    // onClose = noop — l'utilisateur doit compléter cette étape
     <Modal open={open} onClose={() => {}} title={title}>
       <div className="space-y-5">
 
-        {/* Icône + message */}
         <div className="flex flex-col items-center gap-3 py-2">
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: COLORS.accent + '25' }}
-          >
-            <KeyRound size={26} style={{ color: COLORS.accent }} />
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-accent/25">
+            <KeyRound size={26} className="text-accent" />
           </div>
           <p className="text-sm text-gray-400 text-center">
             {isRecovery
@@ -82,8 +71,7 @@ export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="px-6 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: COLORS.accent }}
+            className="px-6 py-2.5 rounded-lg bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Activation…' : (isRecovery ? 'Mettre à jour' : 'Activer mon compte')}
           </button>

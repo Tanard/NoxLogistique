@@ -1,13 +1,10 @@
-import { COLORS } from '../../constants'
-
 export function BtnPrimary({ children, onClick, disabled, loading, type = 'button' }) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className="px-5 py-2.5 rounded-lg text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-      style={{ backgroundColor: COLORS.accent }}
+      className="px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? '…' : children}
     </button>
@@ -46,8 +43,7 @@ export function BtnSoft({ children, onClick, disabled, icon: Icon }) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40"
-      style={{ color: COLORS.accent, backgroundColor: COLORS.accent + '15' }}
+      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-accent bg-accent/10 transition-colors hover:bg-accent/20 disabled:opacity-40"
     >
       {Icon && <Icon size={15} />}
       {children}

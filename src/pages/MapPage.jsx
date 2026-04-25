@@ -4,7 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Search, Lock, Unlock, Trash2, X, MapPin } from 'lucide-react'
 import { useFestivalMap } from '../hooks/useFestivalMap'
-import { MAP_ELEMENTS, MAP_PATH_TYPES, COLORS } from '../constants'
+import { MAP_ELEMENTS, MAP_PATH_TYPES } from '../constants'
 
 // ─── Fly to location after geocoding ─────────────────────────────────────────
 function MapController({ flyTo }) {
@@ -209,8 +209,8 @@ export default function MapPage({ festivalId, isEditor }) {
 
   if (!festivalId) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-3" style={{ background: COLORS.bg }}>
-        <MapPin size={40} style={{ color: COLORS.accent, opacity: 0.4 }} />
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-app-bg">
+        <MapPin size={40} className="text-accent opacity-40" />
         <p className="text-gray-400 text-sm">Sélectionne un festival pour accéder à la carte.</p>
       </div>
     )
@@ -218,7 +218,7 @@ export default function MapPage({ festivalId, isEditor }) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center" style={{ background: COLORS.bg }}>
+      <div className="flex-1 flex items-center justify-center bg-app-bg">
         <p className="text-gray-400 text-sm">Chargement de la carte…</p>
       </div>
     )
@@ -352,7 +352,7 @@ export default function MapPage({ festivalId, isEditor }) {
             <button
               onClick={geocode}
               style={{
-                background: COLORS.accent,
+                background: 'var(--color-accent)',
                 border: 'none', borderRadius: 7,
                 padding: '6px 9px', color: '#fff',
                 cursor: 'pointer', display: 'flex', alignItems: 'center',
@@ -372,7 +372,7 @@ export default function MapPage({ festivalId, isEditor }) {
             style={{
               display: 'flex', alignItems: 'center', gap: 7,
               padding: '7px 10px', borderRadius: 8, border: 'none',
-              background: isLocked ? 'rgba(239,68,68,0.12)' : `${COLORS.accent}22`,
+              background: isLocked ? 'rgba(239,68,68,0.12)' : 'color-mix(in srgb, var(--color-accent) 13%, transparent)',
               color: isLocked ? '#FCA5A5' : '#C4B5FD',
               cursor: saving ? 'not-allowed' : 'pointer',
               fontSize: 12, fontWeight: 600, width: '100%',

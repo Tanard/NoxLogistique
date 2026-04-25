@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useUsers } from '../hooks/useUsers'
 import { ModalUser } from '../modals/ModalUser'
-import { COLORS } from '../constants'
 import { RoleBadge } from '../components/ui/RoleBadge'
 import { SortableHeader } from '../components/ui/SortableHeader'
 import { TopBar } from '../components/ui/TopBar'
+import { PageLayout } from '../components/ui/PageLayout'
 import { Search, UserPlus, Users, RefreshCw } from 'lucide-react'
 
 /** Retourne le rôle le plus élevé parmi les memberships d'un utilisateur */
@@ -69,9 +69,8 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
   }, [users, selectedFestival, searchQuery, sortKey, sortDir])
 
   return (
-    <main className="flex-1 overflow-y-auto" style={{ backgroundColor: COLORS.bg }}>
-      <div className="p-4 md:p-8 pt-16 md:pt-8 max-w-5xl mx-auto">
-
+    <>
+    <PageLayout>
         <TopBar
           user={user}
           isAdmin={isAdmin}
@@ -83,7 +82,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
         {/* ── En-tête ──────────────────────────────────────────────────────── */}
         <div className="flex items-start justify-between mb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold" style={{ color: COLORS.textDark }}>
+            <h2 className="text-2xl font-bold text-app-text">
               Gestion des utilisateurs
             </h2>
             <p className="text-sm text-gray-500 mt-0.5">
@@ -105,15 +104,10 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
           {/* Total Festivals */}
           <button
             onClick={() => setSelectedFestival(null)}
-            className="flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] transition-all cursor-pointer hover:scale-[1.02]"
-            style={{
-              backgroundColor: COLORS.card,
-              borderLeft: `3px solid ${COLORS.accent}`,
-              outline: selectedFestival === null ? `2px solid ${COLORS.accent}` : 'none',
-            }}
+            className={`flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] bg-card border-l-[3px] border-accent cursor-pointer transition-opacity hover:opacity-90 ${selectedFestival === null ? 'outline outline-2 outline-accent' : ''}`}
           >
-            <div className="p-2 rounded-lg" style={{ backgroundColor: COLORS.accent + '22' }}>
-              <Users size={20} style={{ color: COLORS.accent }} />
+            <div className="p-2 rounded-lg bg-accent/15">
+              <Users size={20} className="text-accent" />
             </div>
             <div className="text-left">
               <p className="text-xs text-gray-400 whitespace-nowrap">Festival</p>
@@ -128,13 +122,8 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
               <button
                 key={f.id}
                 onClick={() => setSelectedFestival(active ? null : f.id)}
-                className="flex-shrink-0 flex flex-col items-start justify-between rounded-xl p-4 min-w-[200px] transition-all cursor-pointer hover:scale-[1.02]"
-                style={{
-                  backgroundColor: COLORS.card,
-                  borderLeft: `3px solid ${COLORS.accent}`,
-                  outline: active ? `2px solid ${COLORS.accent}` : 'none',
-                  minHeight: '100px',
-                }}
+                className={`flex-shrink-0 flex flex-col items-start justify-between rounded-xl p-4 min-w-[200px] bg-card border-l-[3px] border-accent cursor-pointer transition-opacity hover:opacity-90 ${active ? 'outline outline-2 outline-accent' : ''}`}
+                style={{ minHeight: '100px' }}
               >
                 <div className="w-full">
                   <p className="text-xs text-gray-400 whitespace-nowrap">{f.name}</p>
@@ -152,8 +141,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
         <div className="flex items-center gap-2 mb-5">
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity flex-shrink-0"
-            style={{ backgroundColor: COLORS.accent }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity flex-shrink-0"
           >
             <UserPlus size={16} />
             Créer
@@ -165,8 +153,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Rechercher par email ou nom…"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
-              style={{ color: COLORS.textDark }}
+              className="input-light pl-10"
             />
           </div>
         </div>
@@ -192,10 +179,10 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
                   key={u.id}
                   onClick={() => setSelectedUser(u)}
                   className="cursor-pointer hover:bg-purple-50 transition-colors border-b border-gray-100"
-                  style={i % 2 !== 0 ? { backgroundColor: '#FAFAF8' } : {}}
+                  style={i % 2 === 0 ? {} : { backgroundColor: '#FAFAF8' }}
                 >
                   <td className="px-4 py-3">
-                    <p className="font-semibold" style={{ color: COLORS.textDark }}>{u.fullName}</p>
+                    <p className="font-semibold text-app-text">{u.fullName}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{u.email}</p>
                   </td>
                   <td className="px-4 py-3">
@@ -239,11 +226,11 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
             <div
               key={u.id}
               onClick={() => setSelectedUser(u)}
-              className="rounded-xl p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-transform bg-white"
+              className="rounded-xl p-4 shadow-sm cursor-pointer bg-white"
             >
               <div className="flex items-start justify-between mb-1.5 gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-sm truncate" style={{ color: COLORS.textDark }}>{u.fullName}</p>
+                  <p className="font-semibold text-sm truncate text-app-text">{u.fullName}</p>
                   <p className="text-xs text-gray-400 truncate">{u.email}</p>
                 </div>
                 <RoleBadge role={getTopRole(u.memberships)} />
@@ -264,7 +251,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
           )}
         </div>
 
-      </div>
+    </PageLayout>
 
       {/* ── Modal vue/édition utilisateur ─────────────────────────────────── */}
       {selectedUser && (
@@ -316,6 +303,6 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
           showToast={showToast}
         />
       )}
-    </main>
+    </>
   )
 }

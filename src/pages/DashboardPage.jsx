@@ -5,7 +5,7 @@ import { StatutBadge } from '../components/ui/StatutBadge'
 import { SortableHeader } from '../components/ui/SortableHeader'
 import { TopBar } from '../components/ui/TopBar'
 import { PageLayout } from '../components/ui/PageLayout'
-import { COLORS, POLES, formatDate } from '../constants'
+import { POLES, formatDate } from '../constants'
 
 const COLUMNS = [
   { label: 'Pôle',        key: 'pole' },
@@ -40,11 +40,7 @@ export default function DashboardPage({
   onCycleStatut,
 }) {
   const [currentPage, setCurrentPage] = useState(1)
-
-  // Réinitialiser la page quand filtered change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [filtered])
+  useEffect(() => { setCurrentPage(1) }, [filtered])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
@@ -63,15 +59,10 @@ export default function DashboardPage({
       <div className="flex gap-4 overflow-x-auto pb-2 mb-3">
         <button
           onClick={() => setFilterPole(null)}
-          className="flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] transition-all cursor-pointer hover:scale-[1.02]"
-          style={{
-            backgroundColor: COLORS.card,
-            borderLeft: `3px solid ${COLORS.accent}`,
-            outline: filterPole === null ? `2px solid ${COLORS.accent}` : 'none',
-          }}
+          className={`flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] bg-card border-l-[3px] border-accent cursor-pointer transition-opacity hover:opacity-90 ${filterPole === null ? 'outline outline-2 outline-accent' : ''}`}
         >
-          <div className="p-2 rounded-lg" style={{ backgroundColor: COLORS.accent + '22' }}>
-            <ClipboardList size={20} style={{ color: COLORS.accent }} />
+          <div className="p-2 rounded-lg bg-accent/15">
+            <ClipboardList size={20} className="text-accent" />
           </div>
           <div className="text-left">
             <p className="text-xs text-gray-400 whitespace-nowrap">Besoin</p>
@@ -84,12 +75,8 @@ export default function DashboardPage({
             <button
               key={pole.label}
               onClick={() => setFilterPole(active ? null : pole.label)}
-              className="flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] transition-all cursor-pointer hover:scale-[1.02]"
-              style={{
-                backgroundColor: COLORS.card,
-                borderLeft: `3px solid ${pole.color}`,
-                outline: active ? `2px solid ${pole.color}` : 'none',
-              }}
+              className={`flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] bg-card cursor-pointer transition-opacity hover:opacity-90 ${active ? 'outline outline-2' : ''}`}
+              style={{ borderLeft: `3px solid ${pole.color}`, outlineColor: active ? pole.color : undefined }}
             >
               <div className="p-2 rounded-lg" style={{ backgroundColor: pole.color + '22' }}>
                 <pole.icon size={20} style={{ color: pole.color }} />
@@ -105,15 +92,14 @@ export default function DashboardPage({
 
       {/* Header tableau */}
       <div className="mb-4">
-        <h2 className="text-lg font-bold mb-2" style={{ color: COLORS.textDark }}>
+        <h2 className="text-lg font-bold mb-2 text-app-text">
           Besoins {filterPole && <span className="text-sm font-normal text-gray-500">— {filterPole}</span>}
         </h2>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {(user && isEditor) && (
             <button
               onClick={() => setShowNew(true)}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-lg hover:opacity-90 transition-opacity flex-shrink-0"
-              style={{ backgroundColor: COLORS.accent }}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity flex-shrink-0"
             >
               <Plus size={18} />
               Nouveau Besoin
@@ -126,8 +112,7 @@ export default function DashboardPage({
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Rechercher un besoin..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent"
-              style={{ color: COLORS.textDark }}
+              className="input-light pl-10"
             />
           </div>
         </div>
@@ -137,7 +122,7 @@ export default function DashboardPage({
       <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white">
         <table className="w-full" style={{ fontSize: '13px' }}>
           <thead>
-            <tr style={{ backgroundColor: COLORS.tableHeader }}>
+            <tr className="bg-table-hd">
               {COLUMNS.map(col => (
                 <SortableHeader
                   key={col.key}
@@ -160,9 +145,9 @@ export default function DashboardPage({
               >
                 <td className="px-4 py-1.5"><PoleBadge pole={b.pole} /></td>
                 <td className="px-4 py-1.5 text-gray-500">{b.zone || '—'}</td>
-                <td className="px-4 py-1.5" style={{ color: COLORS.textDark }}>{formatDate(b.date)}</td>
-                <td className="px-4 py-1.5 font-medium" style={{ color: COLORS.textDark }}>{b.designation}</td>
-                <td className="px-4 py-1.5 text-center" style={{ color: COLORS.textDark }}>{b.quantite}</td>
+                <td className="px-4 py-1.5 text-app-text">{formatDate(b.date)}</td>
+                <td className="px-4 py-1.5 font-medium text-app-text">{b.designation}</td>
+                <td className="px-4 py-1.5 text-center text-app-text">{b.quantite}</td>
                 <td className="px-4 py-1.5">
                   {(isAdmin || isEditor) && onCycleStatut ? (
                     <button
@@ -195,8 +180,8 @@ export default function DashboardPage({
           >
             Précédent
           </button>
-          <span className="text-sm" style={{ color: COLORS.textDark }}>
-            Page <span className="font-bold" style={{ color: COLORS.accent }}>{currentPage}</span> sur {totalPages}
+          <span className="text-sm text-app-text">
+            Page <span className="font-bold text-accent">{currentPage}</span> sur {totalPages}
           </span>
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
@@ -214,7 +199,7 @@ export default function DashboardPage({
           <div
             key={b.id}
             onClick={() => setSelectedBesoin(b)}
-            className="rounded-xl p-4 shadow-sm cursor-pointer active:scale-[0.98] transition-transform bg-white"
+            className="rounded-xl p-4 shadow-sm cursor-pointer bg-white"
           >
             <div className="flex items-center justify-between mb-2">
               <PoleBadge pole={b.pole} />
@@ -229,7 +214,7 @@ export default function DashboardPage({
                 <StatutBadge statut={b.statut} />
               )}
             </div>
-            <h3 className="text-sm font-bold mb-1" style={{ color: COLORS.textDark }}>{b.designation}</h3>
+            <h3 className="text-sm font-bold mb-1 text-app-text">{b.designation}</h3>
             <div className="flex items-center justify-between text-xs text-gray-500">
               <span>{formatDate(b.date)}</span>
               <span>Qté : {b.quantite}</span>
@@ -242,7 +227,6 @@ export default function DashboardPage({
           <div className="text-center py-12 text-gray-400">Aucun besoin trouvé</div>
         )}
       </div>
-
     </PageLayout>
   )
 }

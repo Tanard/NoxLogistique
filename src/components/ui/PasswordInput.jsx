@@ -12,7 +12,7 @@ export function PasswordInput({ value, onChange, placeholder, autoComplete, onKe
         placeholder={placeholder}
         autoComplete={autoComplete}
         onKeyDown={onKeyDown}
-        className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2.5 pr-10 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
+        className="input-dark pr-10"
       />
       <button
         type="button"
