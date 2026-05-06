@@ -47,7 +47,7 @@ export function useFestival(userId) {
       // Restaure le dernier festival sélectionné ou prend le premier dispo
       // Fix #25 — localStorage entouré de try/catch
       let saved = null
-      try { saved = localStorage.getItem('logisticore_festival_id') } catch {}
+      try { saved = localStorage.getItem('logisticore_festival_id') } catch { /* localStorage indisponible */ }
       const match = list.find(f => f.id === saved)
       setSelectedId(match ? match.id : (list[0]?.id ?? null))
     }
@@ -61,7 +61,7 @@ export function useFestival(userId) {
   const selectFestival = useCallback((id) => {
     setSelectedId(id)
     // Fix #25 — localStorage entouré de try/catch
-    try { localStorage.setItem('logisticore_festival_id', id) } catch {}
+    try { localStorage.setItem('logisticore_festival_id', id) } catch { /* localStorage indisponible */ }
   }, [])
 
   const activeFestival = festivals.find(f => f.id === selectedId) ?? null

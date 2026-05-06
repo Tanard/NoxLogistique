@@ -2,9 +2,9 @@ import { Menu } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { NAV_ITEMS } from '../constants'
 
-const NAV_PATH = { general: '/dashboard', todo: '/todo', map: '/map', admin: '/admin' }
+const NAV_PATH = { home: '/', general: '/dashboard', todo: '/todo', map: '/map', admin: '/admin', planning: '/planning' }
 
-export function Sidebar({ sidebarOpen, setSidebarOpen, activeFestival, loadingFestivals, user, isAdmin, onFestivalClick }) {
+export function Sidebar({ sidebarOpen, setSidebarOpen, isAdmin }) {
   return (
     <>
       <button
@@ -20,25 +20,18 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, activeFestival, loadingFe
       )}
 
       <aside
-        className={`fixed md:static z-40 top-0 left-0 h-full w-64 flex-shrink-0 flex flex-col bg-sidebar transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed md:static z-40 top-0 left-0 h-full w-64 flex-shrink-0 flex flex-col bg-sidebar border-r border-white/10 transition-transform duration-300 md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="p-6 pb-2">
-          <div className="flex items-center gap-2.5 mb-2.5">
+          <NavLink to="/dashboard" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <img src="/nox-logo.svg" alt="Logisticore" className="w-8 h-4 object-contain flex-shrink-0" />
             <h1 className="text-xl font-bold text-white tracking-wide leading-tight">
               Logisticore
-              <span className="block text-[11px] font-normal text-gray-300 tracking-normal leading-tight -mt-0.5">
+              <span className="block text-[11px] font-normal text-gray-400 tracking-normal leading-tight -mt-0.5">
                 outil de gestion logistique événementiel
               </span>
             </h1>
-          </div>
-          <button
-            onClick={() => user && onFestivalClick()}
-            className="text-sm font-semibold text-white truncate text-left hover:opacity-70 transition-opacity w-full"
-            title={user ? 'Changer de festival' : ''}
-          >
-            {activeFestival?.name ?? (user ? (loadingFestivals ? 'Chargement…' : 'Aucun festival') : '—')}
-          </button>
+          </NavLink>
         </div>
         <nav className="flex-1 px-3 mt-4">
           {NAV_ITEMS.filter(item => !item.adminOnly || isAdmin).map(item => (
@@ -47,7 +40,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, activeFestival, loadingFe
               to={NAV_PATH[item.id]}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors mb-1 ${isActive ? 'text-white bg-accent/20 border-l-[3px] border-accent' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`
+                `w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors mb-1 ${isActive ? 'text-white bg-accent/20 border-l-[3px] border-accent' : 'text-gray-400 hover:text-white hover:bg-white/5'}`
               }
             >
               <item.icon size={18} />

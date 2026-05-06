@@ -3,15 +3,14 @@ import { TODO_STATUTS } from '../../constants'
 export function TodoStatutBadge({ statut }) {
   const s = TODO_STATUTS.find(x => x.label === statut)
   if (!s) return (
-    <span className="badge bg-gray-100 text-gray-500 border border-gray-200">
+    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-400 whitespace-nowrap">
+      <span style={{ backgroundColor: '#9CA3AF', width: 8, height: 8, borderRadius: '50%', display: 'inline-block', flexShrink: 0 }} />
       {statut ?? '—'}
     </span>
   )
   return (
-    <span
-      className="badge"
-      style={{ backgroundColor: s.bg, color: s.text, border: `1px solid ${s.border}` }}
-    >
+    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 whitespace-nowrap">
+      <span style={{ backgroundColor: s.dot, width: 8, height: 8, borderRadius: '50%', display: 'inline-block', flexShrink: 0 }} />
       {s.label}
     </span>
   )

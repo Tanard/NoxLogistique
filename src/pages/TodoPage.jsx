@@ -107,8 +107,8 @@ export default function TodoPage({
         <div className="flex justify-center py-20 text-gray-400 text-sm">Chargement…</div>
       ) : (
         <>
-          <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white">
-            <table className="w-full" style={{ fontSize: '13px' }}>
+          <div className="hidden md:block rounded-xl overflow-hidden bg-white border border-gray-200">
+            <table className="w-full">
               <thead>
                 <tr className="bg-table-hd">
                   {COLUMNS.map(col => (
@@ -121,7 +121,7 @@ export default function TodoPage({
                       onSort={handleSort}
                     />
                   ))}
-                  <th className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3">
+                  <th className="text-left text-xs font-semibold text-gray-900 uppercase tracking-wider px-4 py-3">
                     Description
                   </th>
                 </tr>
@@ -131,8 +131,8 @@ export default function TodoPage({
                   <tr
                     key={t.id}
                     onClick={() => setSelectedTodo(t)}
-                    className="cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100"
-                    style={i % 2 === 0 ? {} : { backgroundColor: '#FAFAF8' }}
+                    className="cursor-pointer hover:bg-gray-100 transition-colors border-b border-gray-100"
+                    style={{ backgroundColor: i % 2 === 0 ? '#FFFFFF' : '#F4F4F5' }}
                   >
                     <td className="px-4 py-3 font-semibold max-w-[240px] text-app-text">{t.titre}</td>
                     <td className="px-4 py-3">
@@ -165,7 +165,7 @@ export default function TodoPage({
               <div
                 key={t.id}
                 onClick={() => setSelectedTodo(t)}
-                className="rounded-xl p-4 shadow-sm cursor-pointer bg-white"
+                className="rounded-xl p-4 border border-gray-200 cursor-pointer bg-white"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <h3 className="text-sm font-bold leading-snug text-app-text">{t.titre}</h3>

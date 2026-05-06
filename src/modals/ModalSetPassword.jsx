@@ -28,14 +28,14 @@ export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false
   const title = isRecovery ? 'Nouveau mot de passe' : 'Activer votre compte'
 
   return (
-    <Modal open={open} onClose={() => {}} title={title}>
+    <Modal open={open} onClose={() => {}} onConfirm={handleSubmit} title={title}>
       <div className="space-y-5">
 
         <div className="flex flex-col items-center gap-3 py-2">
-          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-accent/25">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center bg-accent/10">
             <KeyRound size={26} className="text-accent" />
           </div>
-          <p className="text-sm text-gray-400 text-center">
+          <p className="text-sm text-gray-600 text-center">
             {isRecovery
               ? 'Choisissez votre nouveau mot de passe.'
               : 'Bienvenue sur Logisticore ! Choisissez un mot de passe pour activer votre compte.'}
@@ -43,7 +43,7 @@ export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false
         </div>
 
         <div>
-          <label className="block text-xs text-gray-400 mb-1">
+          <label className="block text-xs text-gray-500 mb-1">
             {isRecovery ? 'Nouveau mot de passe *' : 'Mot de passe *'}
           </label>
           <PasswordInput
@@ -56,7 +56,7 @@ export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false
         </div>
 
         <div>
-          <label className="block text-xs text-gray-400 mb-1">Confirmer le mot de passe *</label>
+          <label className="block text-xs text-gray-500 mb-1">Confirmer le mot de passe *</label>
           <PasswordInput
             value={confirm}
             onChange={e => setConfirm(e.target.value)}
@@ -67,7 +67,7 @@ export function ModalSetPassword({ open, onDone, setPassword, isRecovery = false
 
         <ErrorBlock message={error?.message} code={error?.code} />
 
-        <div className="flex justify-end pt-2 border-t border-white/10">
+        <div className="flex justify-end pt-2 border-t border-gray-200">
           <button
             onClick={handleSubmit}
             disabled={saving}

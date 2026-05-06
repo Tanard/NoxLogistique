@@ -1,13 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: system-ui, -apple-system, sans-serif;
-  --color-sidebar: #0F0F0F;
-  --color-card: #1C1C1C;
-  --color-accent: #7C3AED;
-  --color-app-bg: #F8F7FC;
-  --color-app-text: #2D2B3A;
-  --color-table-hd: #111111;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-sidebar:   #111111;
+  --color-card:      #FFFFFF;
+  --color-accent:    #7C3AED;
+  --color-app-bg:    #FFFFFF;
+  --color-app-text:  #1A1A1A;
+  --color-table-hd:  #F7F7F7;
+  --color-border:    #EAEAEA;
+}
+
+html {
+  font-size: 1.0625rem;
 }
 
 body {
@@ -54,13 +59,229 @@ body {
   .input-dark:focus { outline: none; box-shadow: 0 0 0 2px var(--color-accent); }
 }
 
+/* Animations camion accueil */
+@keyframes truck-drive {
+  0%, 100% { transform: translateX(0px); }
+  50%       { transform: translateX(6px); }
+}
+@keyframes road-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes wheel-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Planning calendar ─────────────────────────────────────────────── */
+.planning-calendar { font-family: var(--font-sans); display: flex; flex-direction: column; height: 100%; }
+.planning-calendar * { box-sizing: border-box; }
+
+/* Root calendar container */
+.planning-calendar .rbc-calendar {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  background: #fff;
+}
+
+/* Hide built-in toolbar */
+.planning-calendar .rbc-toolbar { display: none !important; }
+
+/* ── MONTH VIEW ── */
+.planning-calendar .rbc-month-view {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+/* Day-name header */
+.planning-calendar .rbc-month-header { flex-shrink: 0; }
+.planning-calendar .rbc-header {
+  padding: 6px 0 !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #9ca3af !important;
+  text-align: center !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  border-right: 1px solid #e5e7eb !important;
+  background: #fafafa !important;
+}
+.planning-calendar .rbc-header:last-child { border-right: none !important; }
+.planning-calendar .rbc-header.rbc-today { color: var(--color-accent) !important; }
+
+/* Each week row */
+.planning-calendar .rbc-month-row {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+.planning-calendar .rbc-month-row:last-child { border-bottom: none !important; }
+
+/* Background day cells */
+.planning-calendar .rbc-row-bg {
+  position: absolute !important;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex !important;
+}
+.planning-calendar .rbc-day-bg {
+  flex: 1 !important;
+  border-right: 1px solid #e5e7eb !important;
+}
+.planning-calendar .rbc-day-bg:last-child { border-right: none !important; }
+.planning-calendar .rbc-off-range-bg { background: #f9f9f9 !important; }
+.planning-calendar .rbc-today { background: #f5f3ff !important; }
+
+/* Row content (date numbers + events) */
+.planning-calendar .rbc-row-content {
+  position: relative !important;
+  z-index: 4 !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+.planning-calendar .rbc-row {
+  display: flex !important;
+  flex-direction: row !important;
+}
+
+/* Date cell numbers */
+.planning-calendar .rbc-date-cell {
+  flex: 1 !important;
+  text-align: right !important;
+  padding: 3px 6px 2px !important;
+  font-size: 0.78rem !important;
+  color: #374151;
+  line-height: 1.4 !important;
+}
+.planning-calendar .rbc-date-cell.rbc-off-range { color: #d1d5db !important; }
+.planning-calendar .rbc-date-cell button,
+.planning-calendar .rbc-date-cell a {
+  font-size: inherit !important;
+  color: inherit !important;
+  background: none !important;
+  border: none !important;
+  cursor: default !important;
+  padding: 1px 3px !important;
+  border-radius: 50% !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+  display: inline-block !important;
+}
+.planning-calendar .rbc-date-cell.rbc-now button,
+.planning-calendar .rbc-date-cell.rbc-now a {
+  background: var(--color-accent) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+/* Events */
+.planning-calendar .rbc-event {
+  background: var(--color-accent) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 1px 5px !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  color: #fff !important;
+  min-height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  margin: 1px 2px !important;
+  overflow: hidden !important;
+}
+.planning-calendar .rbc-event:focus { outline: none !important; box-shadow: 0 0 0 2px rgba(124,58,237,0.35) !important; }
+.planning-calendar .rbc-event-label { display: none !important; } /* hide duplicate time in month */
+.planning-calendar .rbc-event-content { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.planning-calendar .rbc-show-more {
+  font-size: 0.68rem;
+  color: var(--color-accent);
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 6px;
+  margin: 0 2px;
+}
+
+/* ── WEEK / DAY VIEW ── */
+.planning-calendar .rbc-time-view {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+.planning-calendar .rbc-time-header {
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+  background: #fafafa !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+.planning-calendar .rbc-time-header-content { border-left: 1px solid #e5e7eb !important; }
+.planning-calendar .rbc-time-content {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  border-top: none !important;
+  display: flex !important;
+}
+.planning-calendar .rbc-time-gutter { flex-shrink: 0; }
+.planning-calendar .rbc-timeslot-group {
+  border-bottom: 1px solid #f3f4f6 !important;
+  min-height: 44px !important;
+}
+.planning-calendar .rbc-time-slot { border-top: none !important; }
+.planning-calendar .rbc-time-slot .rbc-label {
+  font-size: 0.68rem !important;
+  color: #9ca3af !important;
+  padding: 0 8px !important;
+  line-height: 1 !important;
+}
+.planning-calendar .rbc-day-slot .rbc-timeslot-group { border-bottom: 1px solid #f3f4f6 !important; }
+.planning-calendar .rbc-day-slot .rbc-time-slot { border-top: 1px solid #f8f8f8 !important; }
+.planning-calendar .rbc-day-slot { border-right: 1px solid #e5e7eb !important; }
+.planning-calendar .rbc-day-slot:last-child { border-right: none !important; }
+.planning-calendar .rbc-day-slot .rbc-event {
+  border-radius: 6px !important;
+  border: none !important;
+  padding: 3px 8px !important;
+  font-size: 0.72rem !important;
+}
+.planning-calendar .rbc-current-time-indicator {
+  background: var(--color-accent) !important;
+  height: 2px !important;
+}
+.planning-calendar .rbc-current-time-indicator::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  margin-top: -3px;
+  margin-left: -4px;
+}
+/* ── end planning calendar ─────────────────────────────────────────── */
+
 /* Badge générique */
 .badge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.625rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   white-space: nowrap;
 }

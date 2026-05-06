@@ -138,8 +138,9 @@ export function useBesoins({ enabled = true, festivalId = DEFAULT_FESTIVAL_ID } 
 
   const deleteBesoin = useCallback(async (id) => {
     const { error } = await supabase.from('besoins').delete().eq('id', id)
-    if (error) setError(error)
-    return { error }
+    if (error) { setError(error); return { error } }
+    setBesoins(prev => prev.filter(b => b.id !== id))
+    return { error: null }
   }, [])
 
   return {

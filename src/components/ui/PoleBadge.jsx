@@ -5,8 +5,8 @@ export function PoleBadge({ pole }) {
   if (!p) return <span>{pole}</span>
   return (
     <span
-      className="badge text-white gap-1.5"
-      style={{ backgroundColor: p.color }}
+      className="badge gap-1.5"
+      style={{ backgroundColor: p.color + '1A', color: p.color }}
     >
       <p.icon size={13} />
       {p.label}

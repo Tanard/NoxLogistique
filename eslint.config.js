@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', '**/._*']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -24,6 +24,10 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Patterns de reset d'état dans useEffect sont intentionnels dans ce projet
+      'react-hooks/set-state-in-effect': 'warn',
+      // Dépendances précises (mapData?.id) intentionnelles pour éviter des re-créations inutiles
+      'react-hooks/preserve-manual-memoization': 'warn',
     },
   },
 ])

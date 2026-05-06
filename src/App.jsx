@@ -4,6 +4,9 @@ import { useAuth } from './hooks/useAuth'
 import { useBesoins } from './hooks/useBesoins'
 import { useFestival } from './hooks/useFestival'
 import { useTodos } from './hooks/useTodos'
+import { useZones } from './hooks/useZones'
+import { useArticles } from './hooks/useArticles'
+import { usePlanningEvents } from './hooks/usePlanningEvents'
 import { POLES } from './constants'
 import { useFestivalMembers } from './hooks/useFestivalMembers'
 import { LoadingScreen } from './components/LoadingScreen'
@@ -11,13 +14,16 @@ import { Sidebar } from './components/Sidebar'
 import LoginPage from './pages/LoginPage'
 import { ModalFestivalSelect } from './modals/ModalFestivalSelect'
 import { ModalNouveau } from './modals/ModalNouveau'
+import { ModalNouvelleEntree } from './modals/ModalNouvelleEntree'
 import { ModalDetail } from './modals/ModalDetail'
 import { ModalSetPassword } from './modals/ModalSetPassword'
 import { ModalTodo } from './modals/ModalTodo'
 
+const AccueilPage = lazy(() => import('./pages/AccueilPage'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const TodoPage = lazy(() => import('./pages/TodoPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
+const PlanningPage = lazy(() => import('./pages/PlanningPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 
 const DEFAULT_SORT_CHAIN = [
@@ -31,6 +37,8 @@ export default function App() {
 
   const [appLoading, setAppLoading] = useState(true)
   const [showNew, setShowNew] = useState(false)
+  const [showNouvelleZone, setShowNouvelleZone] = useState(false)
+  const [showNouvelArticle, setShowNouvelArticle] = useState(false)
   const [selectedBesoin, setSelectedBesoin] = useState(null)
   const [filterPole, setFilterPole] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -76,16 +84,20 @@ export default function App() {
     if (prevUserIdRef.current !== user.id) {
       prevUserIdRef.current = user.id
       let hasSavedFestival = false
-      try { hasSavedFestival = !!localStorage.getItem('logisticore_festival_id') } catch {}
+      try { hasSavedFestival = !!localStorage.getItem('logisticore_festival_id') } catch { /* localStorage indisponible (mode privé) */ }
       if (festivals.length !== 1 && !hasSavedFestival) {
         setShowFestivalSelect(true)
       }
     }
   }, [user?.id, loadingFestivals, festivals.length])
 
-  // Fix #13 — Reset des états locaux à la déconnexion
+  // Reset états à la déconnexion — useRef évite le navigate au chargement initial (user=null)
+  const wasLoggedIn = useRef(false)
   useEffect(() => {
-    if (!user) {
+    if (user) {
+      wasLoggedIn.current = true
+    } else if (wasLoggedIn.current) {
+      wasLoggedIn.current = false
       setFilterPole(null)
       setSearchQuery('')
       setSelectedBesoin(null)
@@ -94,7 +106,7 @@ export default function App() {
       setShowNewTodo(false)
       setSelectedTodo(null)
       setTodoSearch('')
-      navigate('/dashboard')
+      navigate('/')
     }
   }, [user, navigate])
 
@@ -106,9 +118,12 @@ export default function App() {
     } else {
       setAppVisible(false)
     }
-  }, [user?.id, appLoading])
+  }, [user, appLoading])
 
   const festivalMembers = useFestivalMembers(selectedId ?? undefined)
+  const { zones, addZone, updateZone } = useZones({ festivalId: selectedId ?? undefined })
+  const { articles, addArticle, updateArticle } = useArticles({ festivalId: selectedId ?? undefined })
+  const { events: planningEvents, addEvent, updateEvent, deleteEvent } = usePlanningEvents({ enabled: !!user && !!selectedId, festivalId: selectedId ?? undefined })
 
   const {
     besoins,
@@ -216,6 +231,24 @@ export default function App() {
     return { error }
   }, [deleteTodoDB, showToast])
 
+  const addPlanningEvent = useCallback(async (data) => {
+    const { error } = await addEvent(data)
+    if (error) { showToast('Erreur lors de la sauvegarde', 'error') }
+    return { error }
+  }, [addEvent, showToast])
+
+  const updatePlanningEvent = useCallback(async (data) => {
+    const { error } = await updateEvent(data)
+    if (error) { showToast('Erreur lors de la sauvegarde', 'error') }
+    return { error }
+  }, [updateEvent, showToast])
+
+  const deletePlanningEvent = useCallback(async (id) => {
+    const { error } = await deleteEvent(id)
+    if (error) { showToast('Erreur lors de la sauvegarde', 'error') }
+    return { error }
+  }, [deleteEvent, showToast])
+
   const handleLoadingDone = useCallback(() => setAppLoading(false), [])
 
   if (appLoading) {
@@ -245,16 +278,23 @@ export default function App() {
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
-        activeFestival={activeFestival}
-        loadingFestivals={loadingFestivals}
-        user={user}
         isAdmin={isAdmin}
-        onFestivalClick={() => setShowFestivalSelect(true)}
       />
 
       <Suspense fallback={null}>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/"
+            element={
+              <AccueilPage
+                user={user}
+                isAdmin={isAdmin}
+                activeFestival={activeFestival}
+                onFestivalClick={() => setShowFestivalSelect(true)}
+                signOut={signOut}
+              />
+            }
+          />
           <Route
             path="/dashboard"
             element={
@@ -277,6 +317,12 @@ export default function App() {
                 handleSort={handleSort}
                 setSelectedBesoin={setSelectedBesoin}
                 setShowNew={setShowNew}
+                zones={zones}
+                articles={articles}
+                updateZone={updateZone}
+                updateArticle={updateArticle}
+                setShowNouvelleZone={setShowNouvelleZone}
+                setShowNouvelArticle={setShowNouvelArticle}
                 setShowFestivalSelect={setShowFestivalSelect}
               />
             }
@@ -310,6 +356,23 @@ export default function App() {
             }
           />
           <Route
+            path="/planning"
+            element={
+              <PlanningPage
+                user={user}
+                isAdmin={isAdmin}
+                isEditor={isEditor}
+                signOut={signOut}
+                activeFestival={activeFestival}
+                events={planningEvents}
+                addPlanningEvent={addPlanningEvent}
+                updatePlanningEvent={updatePlanningEvent}
+                deletePlanningEvent={deletePlanningEvent}
+                setShowFestivalSelect={setShowFestivalSelect}
+              />
+            }
+          />
+          <Route
             path="/admin"
             element={
               isAdmin
@@ -325,12 +388,26 @@ export default function App() {
                 : <Navigate to="/dashboard" replace />
             }
           />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
 
       {/* Modals */}
-      <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} />
+      <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} zones={zones} articles={articles} />
+      <ModalNouvelleEntree
+        open={showNouvelleZone}
+        onClose={() => setShowNouvelleZone(false)}
+        titre="Nouvelle Zone"
+        placeholder="Ex : Entrée, Scène, Parking…"
+        onSave={(nom, commentaire) => addZone(nom, commentaire)}
+      />
+      <ModalNouvelleEntree
+        open={showNouvelArticle}
+        onClose={() => setShowNouvelArticle(false)}
+        titre="Nouvel Article"
+        placeholder="Ex : Tables pliantes, Barrières…"
+        onSave={(nom, commentaire) => addArticle(nom, commentaire)}
+      />
       <ModalDetail
         open={!!selectedBesoin}
         onClose={() => setSelectedBesoin(null)}
@@ -339,6 +416,8 @@ export default function App() {
         onDelete={deleteBesoin}
         isAdmin={isAdmin}
         isEditor={isEditor}
+        zones={zones}
+        articles={articles}
       />
       <ModalFestivalSelect
         open={showFestivalSelect}
@@ -372,9 +451,9 @@ export default function App() {
             zIndex: 9999,
             padding: '12px 20px',
             borderRadius: '8px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-            background: toast.type === 'error' ? '#DC2626' : '#059669',
-            color: '#fff',
+            border: `1px solid ${toast.type === 'error' ? '#FCA5A5' : '#6EE7B7'}`,
+            background: toast.type === 'error' ? '#FEF2F2' : '#ECFDF5',
+            color: toast.type === 'error' ? '#DC2626' : '#059669',
             fontSize: '14px',
             fontWeight: 500,
             maxWidth: '320px',

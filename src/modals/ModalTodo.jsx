@@ -10,7 +10,7 @@ const EMPTY_FORM = { titre: '', assignee: '', description: '', statut: TODO_STAT
 function Field({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
         {label}
       </label>
       {children}
@@ -88,11 +88,11 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isNew ? 'Nouvelle tâche' : 'Tâche'}>
+    <Modal open={open} onClose={onClose} onConfirm={editing ? handleSave : undefined} title={isNew ? 'Nouvelle tâche' : 'Tâche'}>
       <div className="space-y-5">
 
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Statut</span>
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</span>
           {editing ? (
             <BtnCycle onClick={() => set('statut', cycleTodoStatut(form.statut))} title="Changer le statut">
               <TodoStatutBadge statut={form.statut} />
@@ -109,10 +109,10 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
               value={form.titre}
               onChange={e => set('titre', e.target.value)}
               placeholder="Intitulé de la tâche"
-              className="input-dark"
+              className="input-light"
             />
           ) : (
-            <p className="text-white text-sm font-medium py-2">{form.titre || '—'}</p>
+            <p className="text-gray-900 text-sm font-medium py-2">{form.titre || '—'}</p>
           )}
         </Field>
 
@@ -125,14 +125,14 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                 value={form.assignee}
                 onChange={e => set('assignee', e.target.value)}
                 placeholder="Nom de la personne (optionnel)"
-                className="input-dark"
+                className="input-light"
               />
               <datalist id="assignee-members">
                 {festivalMembers.map(name => <option key={name} value={name} />)}
               </datalist>
             </div>
           ) : (
-            <p className="text-white text-sm py-2">{form.assignee || '—'}</p>
+            <p className="text-gray-900 text-sm py-2">{form.assignee || '—'}</p>
           )}
         </Field>
 
@@ -143,23 +143,23 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
               value={form.description}
               onChange={e => set('description', e.target.value)}
               placeholder="Détails optionnels..."
-              className="input-dark resize-none"
+              className="input-light resize-none"
             />
           ) : (
-            <p className="text-gray-300 text-sm py-2 whitespace-pre-wrap">
-              {form.description || <span className="text-gray-500 italic">Aucune description</span>}
+            <p className="text-gray-600 text-sm py-2 whitespace-pre-wrap">
+              {form.description || <span className="text-gray-400 italic">Aucune description</span>}
             </p>
           )}
         </Field>
 
-        {error && <p className="text-red-400 text-sm font-medium">{error}</p>}
+        {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
 
-        <div className="flex items-center justify-between pt-2 border-t border-white/10">
+        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
           <div>
             {!isNew && isAdmin && editing && (
               confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-red-400 text-xs">Confirmer ?</span>
+                  <span className="text-red-600 text-xs">Confirmer ?</span>
                   <button
                     onClick={handleDelete}
                     disabled={saving}
@@ -169,7 +169,7 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="px-3 py-2 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                    className="px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
                   >
                     Annuler
                   </button>
@@ -178,7 +178,7 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                 <button
                   onClick={handleDelete}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
                 >
                   <Trash2 size={13} /> Supprimer
                 </button>
@@ -190,7 +190,7 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
             {!editing && (isAdmin || isEditor) && (
               <button
                 onClick={() => setEditing(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
               >
                 <Pencil size={14} /> Modifier
               </button>
@@ -200,7 +200,7 @@ export function ModalTodo({ open, onClose, todo, onSave, onUpdate, onDelete, isA
                 <button
                   onClick={handleCancelEdit}
                   disabled={saving}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-gray-400 hover:text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-50 transition-colors"
                 >
                   <X size={14} /> Annuler
                 </button>

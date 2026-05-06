@@ -99,19 +99,20 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
           </button>
         </div>
 
-        {/* ── Cartes Festivals (comme les cartes besoins) ────────────────────── */}
-        <div className="flex gap-4 overflow-x-auto pb-2 mb-6">
+        {/* ── Cartes Festivals ────────────────────────────────────────────────── */}
+        <div className="flex gap-3 overflow-x-auto pb-2 mb-6">
           {/* Total Festivals */}
           <button
             onClick={() => setSelectedFestival(null)}
-            className={`flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[180px] bg-card border-l-[3px] border-accent cursor-pointer transition-opacity hover:opacity-90 ${selectedFestival === null ? 'outline outline-2 outline-accent' : ''}`}
+            className={`flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[160px] cursor-pointer transition-all border ${selectedFestival === null ? 'bg-accent border-accent' : 'border-accent/30 hover:bg-accent/20'}`}
+            style={selectedFestival === null ? {} : { backgroundColor: 'rgba(124,58,237,0.10)' }}
           >
-            <div className="p-2 rounded-lg bg-accent/15">
-              <Users size={20} className="text-accent" />
+            <div className={`p-2 rounded-lg ${selectedFestival === null ? 'bg-white/20' : 'bg-accent/20'}`}>
+              <Users size={18} className={selectedFestival === null ? 'text-white' : 'text-accent'} />
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-400 whitespace-nowrap">Festival</p>
-              <p className="text-2xl font-bold text-white">{festivals.length}</p>
+              <p className={`text-sm whitespace-nowrap ${selectedFestival === null ? 'text-white/70' : 'text-gray-600'}`}>Tous les festivals</p>
+              <p className={`text-xl font-bold ${selectedFestival === null ? 'text-white' : 'text-gray-900'}`}>{festivals.length}</p>
             </div>
           </button>
 
@@ -122,16 +123,18 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
               <button
                 key={f.id}
                 onClick={() => setSelectedFestival(active ? null : f.id)}
-                className={`flex-shrink-0 flex flex-col items-start justify-between rounded-xl p-4 min-w-[200px] bg-card border-l-[3px] border-accent cursor-pointer transition-opacity hover:opacity-90 ${active ? 'outline outline-2 outline-accent' : ''}`}
-                style={{ minHeight: '100px' }}
+                className="flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[160px] cursor-pointer transition-all border border-accent/30"
+                style={{ backgroundColor: active ? '#7C3AED' : 'rgba(124,58,237,0.10)' }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.18)' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.10)' }}
               >
-                <div className="w-full">
-                  <p className="text-xs text-gray-400 whitespace-nowrap">{f.name}</p>
-                  <p className="text-xl font-bold text-white mt-0.5">{f.memberCount}</p>
+                <div className="p-2 rounded-lg" style={{ backgroundColor: active ? 'rgba(255,255,255,0.2)' : 'rgba(124,58,237,0.15)' }}>
+                  <Users size={18} style={{ color: active ? '#fff' : '#7C3AED' }} />
                 </div>
-                <p className="text-xs text-gray-500">
-                  {f.adminCount} admin{f.adminCount > 1 ? 's' : ''}
-                </p>
+                <div className="text-left">
+                  <p className="text-sm whitespace-nowrap" style={{ color: active ? 'rgba(255,255,255,0.75)' : '#374151' }}>{f.name}</p>
+                  <p className="text-xl font-bold" style={{ color: active ? '#fff' : '#111827' }}>{f.memberCount}</p>
+                </div>
               </button>
             )
           })}
@@ -159,13 +162,13 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
         </div>
 
         {/* ── Tableau desktop ──────────────────────────────────────────────── */}
-        <div className="hidden md:block rounded-xl overflow-hidden shadow-sm bg-white">
-          <table className="w-full" style={{ fontSize: '13px' }}>
+        <div className="hidden md:block rounded-xl overflow-hidden bg-white border border-gray-200">
+          <table className="w-full">
             <thead>
-              <tr style={{ backgroundColor: '#111111' }}>
+              <tr className="bg-table-hd">
                 <SortableHeader label="Nom / Prénom" sortKey="name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 <SortableHeader label="Rôle" sortKey="role" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-                <th className="text-left text-xs font-semibold text-gray-300 uppercase tracking-wider px-4 py-3">Festivals</th>
+                <th className="text-left text-xs font-semibold text-gray-900 uppercase tracking-wider px-4 py-3">Festivals</th>
               </tr>
             </thead>
             <tbody>
@@ -178,17 +181,17 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
                 <tr
                   key={u.id}
                   onClick={() => setSelectedUser(u)}
-                  className="cursor-pointer hover:bg-purple-50 transition-colors border-b border-gray-100"
-                  style={i % 2 === 0 ? {} : { backgroundColor: '#FAFAF8' }}
+                  className="cursor-pointer hover:bg-gray-100 transition-colors border-b border-gray-100"
+                  style={{ backgroundColor: i % 2 === 0 ? '#FFFFFF' : '#F4F4F5' }}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-1.5">
                     <p className="font-semibold text-app-text">{u.fullName}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{u.email}</p>
+                    <p className="text-xs text-gray-400">{u.email}</p>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-1.5">
                     <RoleBadge role={getTopRole(u.memberships)} />
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-1.5">
                     {u.memberships.length === 0 ? (
                       <span className="text-xs text-gray-400 italic">Aucun festival</span>
                     ) : (
@@ -226,7 +229,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
             <div
               key={u.id}
               onClick={() => setSelectedUser(u)}
-              className="rounded-xl p-4 shadow-sm cursor-pointer bg-white"
+              className="rounded-xl p-4 border border-gray-200 cursor-pointer bg-white"
             >
               <div className="flex items-start justify-between mb-1.5 gap-2">
                 <div className="min-w-0">

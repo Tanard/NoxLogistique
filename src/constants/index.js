@@ -8,10 +8,14 @@ import {
   Settings,
   CheckSquare,
   Map,
+  Home,
+  CalendarDays,
 } from 'lucide-react'
 
+export const COLOR_SIDEBAR = '#111111'
+
 export const POLES = [
-  { label: 'Bénévole', icon: Users, color: '#8B5CF6' },
+  { label: 'Bénévole', icon: Users, color: '#EF4444' },
   { label: 'Restauration', icon: UtensilsCrossed, color: '#F472B6' },
   { label: 'Artiste', icon: Music, color: '#FB923C' },
   { label: 'Sécurité', icon: ShieldCheck, color: '#34D399' },
@@ -19,22 +23,24 @@ export const POLES = [
 ]
 
 export const STATUTS = [
-  { label: 'En attente', bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
-  { label: 'Validé', bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
-  { label: 'Annulé', bg: '#FEE2E2', text: '#DC2626', border: '#FCA5A5' },
+  { label: 'En attente', dot: '#F97316' },
+  { label: 'Validé',     dot: '#10B981' },
+  { label: 'Annulé',     dot: '#EF4444' },
 ]
 
 export const TODO_STATUTS = [
-  { label: 'À faire',  bg: '#FEF3C7', text: '#92400E', border: '#FCD34D' },
-  { label: 'En cours', bg: '#DBEAFE', text: '#2563EB', border: '#93C5FD' },
-  { label: 'Terminé',  bg: '#D1FAE5', text: '#065F46', border: '#6EE7B7' },
+  { label: 'À faire',  dot: '#F97316' },
+  { label: 'En cours', dot: '#3B82F6' },
+  { label: 'Terminé',  dot: '#10B981' },
 ]
 
 export const NAV_ITEMS = [
+  { label: 'Accueil',           icon: Home,            id: 'home' },
   { label: 'Administration',    icon: Settings,        id: 'admin',   adminOnly: true },
   { label: 'Liste des Besoins', icon: LayoutDashboard, id: 'general' },
   { label: 'Todo',              icon: CheckSquare,     id: 'todo' },
   { label: 'Carte technique',   icon: Map,             id: 'map' },
+  { label: 'Planning',          icon: CalendarDays,    id: 'planning' },
 ]
 
 export const MAP_ELEMENTS = [
@@ -66,7 +72,7 @@ export const ROLE_CONFIG = {
 export const SORT_KEYS = {
   'Pôle': 'pole',
   'Date': 'date',
-  'Désignation': 'designation',
+  'Article': 'designation',
   'Quantité': 'quantite',
   'Usage prévu': 'usage',
   'Statut': 'statut',

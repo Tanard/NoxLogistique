@@ -36,6 +36,7 @@ export function rowToBesoin(row) {
     date: row.date,
     designation: row.designation,
     quantite: row.quantite,
+    prix: row.prix ?? '',
     caracteristique: row.caracteristique ?? '',
     usage: row.usage ?? '',
     statut: row.statut,
@@ -94,6 +95,7 @@ export function besoinToRow(b, festivalId) {
     date: b.date,
     designation: b.designation,
     quantite: Number(b.quantite) || 0,
+    prix: b.prix !== '' && b.prix !== null && b.prix !== undefined ? Number(b.prix) : null,
     caracteristique: b.caracteristique?.trim() || null,
     usage: b.usage?.trim() || null,
     statut: b.statut,
@@ -104,5 +106,36 @@ export function besoinToRow(b, festivalId) {
     electricite_detail: b.electriciteDetail?.trim() || null,
     eau: b.eau ?? 'Non',
     eau_detail: b.eauDetail?.trim() || null,
+  }
+}
+
+export function rowToPlanningEvent(row) {
+  return {
+    id: row.id,
+    festival_id: row.festival_id,
+    title: row.title,
+    notes: row.notes ?? '',
+    start: new Date(row.start_at),
+    end: new Date(row.end_at),
+    created_at: row.created_at,
+  }
+}
+
+export function planningEventToRow(e, festivalId) {
+  return {
+    festival_id: festivalId,
+    title: e.title?.trim(),
+    notes: e.notes?.trim() || null,
+    start_at: e.start instanceof Date ? e.start.toISOString() : e.start,
+    end_at: e.end instanceof Date ? e.end.toISOString() : e.end,
+  }
+}
+
+export function planningEventToUpdateRow(e) {
+  return {
+    title: e.title?.trim(),
+    notes: e.notes?.trim() || null,
+    start_at: e.start instanceof Date ? e.start.toISOString() : e.start,
+    end_at: e.end instanceof Date ? e.end.toISOString() : e.end,
   }
 }

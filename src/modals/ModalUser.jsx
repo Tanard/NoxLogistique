@@ -16,8 +16,8 @@ function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
   }
 
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-white/5 last:border-0">
-      <span className="text-sm text-white flex-1 truncate">{membership.festivalName}</span>
+    <div className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-100 last:border-0">
+      <span className="text-sm text-gray-900 flex-1 truncate">{membership.festivalName}</span>
       <button
         onClick={cycleRole}
         disabled={saving}
@@ -30,7 +30,7 @@ function MembershipRow({ membership, onRoleChange, onRemove, saving }) {
       <button
         onClick={onRemove}
         disabled={saving}
-        className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
         title="Retirer de ce festival"
       >
         <X size={14} />
@@ -185,42 +185,42 @@ export function ModalUser({
   const title = mode === 'create' ? 'Créer un utilisateur' : 'Détail utilisateur'
 
   return (
-    <Modal open={open} onClose={onClose} title={title}>
+    <Modal open={open} onClose={onClose} onConfirm={mode === 'create' ? handleCreate : handleSave} title={title}>
 
       {mode === 'create' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-gray-600">
             Un email d'invitation sera envoyé. L'invité clique sur le lien,
             choisit son mot de passe et son compte est activé immédiatement.
           </p>
 
           <div>
-            <label className="block text-xs text-gray-400 mb-1">Email *</label>
+            <label className="block text-xs text-gray-500 mb-1">Email *</label>
             <input
               type="email"
               value={createForm.email}
               onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))}
               placeholder="prenom.nom@entreprise.com"
-              className="input-dark"
+              className="input-light"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-xs text-gray-400 mb-1">Nom et prénom *</label>
+            <label className="block text-xs text-gray-500 mb-1">Nom et prénom *</label>
             <input
               type="text"
               value={createForm.fullName}
               onChange={e => setCreateForm(f => ({ ...f, fullName: e.target.value }))}
               placeholder="Nom Prénom"
-              className="input-dark"
+              className="input-light"
             />
           </div>
 
           <ErrorBlock message={createError?.message} code={createError?.code} />
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
-            <button onClick={onClose} className="px-5 py-2.5 rounded-lg bg-white/10 text-gray-300 text-sm font-medium hover:bg-white/20 transition-colors">
+          <div className="flex justify-end gap-3 pt-2 border-t border-gray-200">
+            <button onClick={onClose} className="px-5 py-2.5 rounded-lg bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors">
               Annuler
             </button>
             <button
@@ -236,25 +236,25 @@ export function ModalUser({
 
       {mode === 'edit' && user && (
         <>
-          <div className="rounded-xl p-4 mb-5 bg-white/5">
+          <div className="rounded-xl p-4 mb-5 bg-gray-50 border border-gray-200">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-accent/30">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-accent/10">
                 <UserCircle2 size={22} className="text-accent" />
               </div>
               <div className="min-w-0">
-                <p className="font-bold text-white truncate">{user.fullName}</p>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                <p className="font-bold text-gray-900 truncate">{user.fullName}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-xl p-4 mb-5 bg-white/5">
-            <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider mb-3">
+          <div className="rounded-xl p-4 mb-5 bg-gray-50 border border-gray-200">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
               Accès festivals
             </h3>
 
             {localMemberships.length === 0 ? (
-              <p className="text-sm text-gray-500 italic py-2">Aucun accès festival attribué</p>
+              <p className="text-sm text-gray-400 italic py-2">Aucun accès festival attribué</p>
             ) : (
               <div>
                 {localMemberships.map(m => (
@@ -270,17 +270,17 @@ export function ModalUser({
             )}
 
             {availableFestivals.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-white/10">
-                <p className="text-xs text-gray-400 mb-2 font-medium">Ajouter un accès</p>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <p className="text-xs text-gray-500 mb-2 font-medium">Ajouter un accès</p>
                 <div className="flex items-center gap-2 mb-2">
                   <select
                     value={addFestivalId}
                     onChange={e => setAddFestivalId(e.target.value)}
-                    className="flex-1 rounded-lg border border-white/20 bg-white/10 text-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="flex-1 rounded-lg border border-gray-200 bg-white text-gray-900 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-accent"
                   >
-                    <option value="" className="bg-gray-900">— Festival —</option>
+                    <option value="">— Festival —</option>
                     {[...availableFestivals].sort((a, b) => a.name.localeCompare(b.name, 'fr')).map(f => (
-                      <option key={f.id} value={f.id} className="bg-gray-900">{f.name}</option>
+                      <option key={f.id} value={f.id}>{f.name}</option>
                     ))}
                   </select>
                   <button
@@ -293,7 +293,7 @@ export function ModalUser({
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-400">Rôle :</span>
+                  <span className="text-xs text-gray-500">Rôle :</span>
                   {ROLES.map(r => {
                     const rc = ROLE_CONFIG[r]
                     const isSelected = addFestivalRole === r
@@ -318,19 +318,19 @@ export function ModalUser({
             )}
           </div>
 
-          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-red-400 text-sm font-medium hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-red-600 text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-40"
               >
                 <Trash2 size={14} />
                 Supprimer l'utilisateur
               </button>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-red-400">Supprimer définitivement ?</span>
+                <span className="text-xs text-red-600">Supprimer définitivement ?</span>
                 <button
                   onClick={handleDelete}
                   disabled={saving}
@@ -340,7 +340,7 @@ export function ModalUser({
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="px-3 py-1.5 rounded-lg bg-white/10 text-gray-300 text-xs"
+                  className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs"
                 >
                   Annuler
                 </button>

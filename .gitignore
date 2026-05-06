@@ -31,5 +31,4 @@ supabase/.temp/
 # Supabase local env
 .env
 .env.local
-.env
 .vercel

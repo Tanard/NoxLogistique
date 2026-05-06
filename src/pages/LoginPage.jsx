@@ -33,29 +33,29 @@ function RegisterForm({ onBack, onSignUp }) {
 
   return (
     <>
-      <h2 className="text-xl font-bold text-white mb-6">Créer un compte</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Créer un compte</h2>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Nom complet</label>
-          <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Prénom Nom" className="input-dark" />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+          <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Prénom Nom" className="input-light" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nom@exemple.com" autoComplete="email" className="input-dark" />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="nom@exemple.com" autoComplete="email" className="input-light" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Mot de passe</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
           <PasswordInput value={password} onChange={e => setPassword(e.target.value)} placeholder="6 caractères minimum" autoComplete="new-password" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Confirmer le mot de passe</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
           <PasswordInput value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Répéter le mot de passe" autoComplete="new-password" onKeyDown={e => e.key === 'Enter' && !loading && handleRegister()} />
         </div>
         <ErrorBlock message={error?.message} code={error?.code} />
-        {success && <p className="text-green-400 text-sm">{success}</p>}
+        {success && <p className="text-green-600 text-sm">{success}</p>}
       </div>
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
-        <button onClick={onBack} className="text-sm text-gray-400 hover:text-white transition-colors underline underline-offset-2">
+      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-900 transition-colors underline underline-offset-2">
           Retour à la connexion
         </button>
         <button onClick={handleRegister} disabled={loading} className="px-5 py-2.5 rounded-lg bg-accent text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-50">
@@ -84,21 +84,21 @@ export default function LoginPage({ onSignIn, onSignUp }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-sidebar">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-white tracking-wide">Logisticore</h1>
-        <p className="text-gray-400 mt-2 text-sm">Gestion logistique festival</p>
+        <h1 className="text-4xl font-bold text-gray-900 tracking-wide">Logisticore</h1>
+        <p className="text-gray-500 mt-2 text-sm">Gestion logistique festival</p>
       </div>
 
-      <div className="w-full max-w-md rounded-2xl shadow-2xl p-8 bg-card">
+      <div className="w-full max-w-md rounded-2xl p-8 bg-white border border-gray-200">
         {showRegister ? (
           <RegisterForm onBack={() => setShowRegister(false)} onSignUp={onSignUp} />
         ) : (
           <>
-            <h2 className="text-xl font-bold text-white mb-6">Connexion</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Connexion</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   type="email"
                   value={email}
@@ -106,11 +106,11 @@ export default function LoginPage({ onSignIn, onSignUp }) {
                   placeholder="nom@exemple.com"
                   autoComplete="email"
                   onKeyDown={e => e.key === 'Enter' && !loading && handleLogin()}
-                  className="input-dark"
+                  className="input-light"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Mot de passe</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
                 <PasswordInput
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -121,10 +121,10 @@ export default function LoginPage({ onSignIn, onSignUp }) {
               </div>
               <ErrorBlock message={error?.message} code={error?.code} />
             </div>
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/10">
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowRegister(true)}
-                className="text-sm text-gray-400 hover:text-white transition-colors underline underline-offset-2"
+                className="text-sm text-gray-500 hover:text-gray-900 transition-colors underline underline-offset-2"
               >
                 Créer un compte
               </button>

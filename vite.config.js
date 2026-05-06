@@ -7,4 +7,7 @@ export default defineConfig({
   server: {
     host: true,
   },
+  optimizeDeps: {
+    include: ['react-big-calendar', 'react-big-calendar/lib/localizers/date-fns', 'date-fns', 'date-fns/locale'],
+  },
 })
