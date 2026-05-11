@@ -1,12 +1,15 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Modal } from '../components/ui/Modal'
 import { POLES, todayISO } from '../constants'
 
-export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [] }) {
+export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [], addArticle }) {
   const [form, setForm] = useState({ pole: POLES[0].label, zone: '', designation: '', quantite: '', prix: '', caracteristique: '', usage: '' })
   const [supplementsActif, setSupplementsActif] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [inputValue, setInputValue] = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
+  const comboRef = useRef(null)
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
@@ -16,11 +19,46 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [] 
     setSupplementsActif(false)
     setError('')
     setLoading(false)
+    setInputValue('')
+    setShowDropdown(false)
   }, [open])
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (comboRef.current && !comboRef.current.contains(e.target)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleSupplementsToggle = (checked) => {
     setSupplementsActif(checked)
     if (!checked) set('usage', '')
+  }
+
+  const zonesSorted = useMemo(() => [...zones].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [zones])
+  const articlesSorted = useMemo(() => [...articles].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [articles])
+
+  const filtered = useMemo(
+    () => articlesSorted.filter(a => a.nom.toLowerCase().includes(inputValue.toLowerCase())),
+    [articlesSorted, inputValue]
+  )
+
+  const isNewArticle = inputValue.trim() && !articles.some(a => a.nom.toLowerCase() === inputValue.trim().toLowerCase())
+
+  const handleInputChange = (e) => {
+    const val = e.target.value
+    setInputValue(val)
+    set('designation', val)
+    setShowDropdown(true)
+  }
+
+  const handleSelect = (nom) => {
+    setInputValue(nom)
+    set('designation', nom)
+    setShowDropdown(false)
   }
 
   const handleSave = async () => {
@@ -30,8 +68,13 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [] 
 
     setLoading(true)
     try {
+      if (isNewArticle && addArticle) {
+        const { error: addErr } = await addArticle(form.designation.trim())
+        if (addErr) { setError('Erreur lors de l\'ajout de l\'article'); return }
+      }
       const result = await onSave({
         ...form,
+        designation: form.designation.trim(),
         quantite: Number(form.quantite),
         date: todayISO(),
         statut: 'En attente',
@@ -45,9 +88,6 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [] 
       setLoading(false)
     }
   }
-
-  const zonesSorted = useMemo(() => [...zones].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [zones])
-  const articlesSorted = useMemo(() => [...articles].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [articles])
 
   return (
     <Modal open={open} onClose={onClose} onConfirm={handleSave} title="Nouveau Besoin">
@@ -67,13 +107,38 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [] 
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Article *</label>
-          <select value={form.designation} onChange={e => set('designation', e.target.value)} className="input-light">
-            <option value="">— Choisir un article —</option>
-            {articlesSorted.map(a => <option key={a.id} value={a.nom}>{a.nom}</option>)}
-          </select>
-          {articlesSorted.length === 0 && (
-            <p className="text-xs text-gray-400 mt-1">Aucun article configuré. Utilisez "Nouvel Article" pour en ajouter.</p>
-          )}
+          <div ref={comboRef} className="relative">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onFocus={() => setShowDropdown(true)}
+              placeholder="Rechercher ou créer un article…"
+              className="input-light"
+              autoComplete="off"
+            />
+            {showDropdown && (filtered.length > 0 || isNewArticle) && (
+              <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filtered.map(a => (
+                  <li
+                    key={a.id}
+                    onMouseDown={() => handleSelect(a.nom)}
+                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                  >
+                    {a.nom}
+                  </li>
+                ))}
+                {isNewArticle && (
+                  <li
+                    onMouseDown={() => handleSelect(inputValue.trim())}
+                    className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 text-blue-600 border-t border-gray-100"
+                  >
+                    + Créer « {inputValue.trim()} »
+                  </li>
+                )}
+              </ul>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>

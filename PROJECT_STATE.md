@@ -130,6 +130,7 @@ ALTER TABLE besoins ADD COLUMN zone TEXT;
 | 2026-05-05 | Prix unitaire sur les besoins | supabase.js, ModalNouveau.jsx, ModalDetail.jsx, DashboardPage.jsx | Champ `prix` (numeric, unitaire) ; total = prix × quantité ; encadrés Budget Prévisionnel + Besoins chiffrés |
 | 2026-05-05 | Onglet Planning | PlanningPage.jsx, ModalNouvelEvent.jsx, usePlanningEvents.js, supabase.js, App.jsx, constants/index.js | Calendrier react-big-calendar (mois/semaine/jour) ; double-clic créneau → création ; CRUD événements Supabase Realtime |
 | 2026-05-06 | Audit qualité + corrections | eslint.config.js, App.jsx, Sidebar.jsx, useFestival.js, PlanningPage.jsx, ModalDetail.jsx, ModalNouveau.jsx, DashboardPage.jsx, constants/index.js | 0 erreur ESLint ; `COLOR_SIDEBAR` centralisé dans constants ; sorts mémorisés avec useMemo ; budget mémorisé ; gestion erreur delete ModalNouvelEvent ; audit.sh + skill /audit-logisticore |
+| 2026-05-11 | Combobox article + audit qualité | ModalNouveau.jsx, App.jsx, useZones.js, useArticles.js, PROJECT_STATE.md | Sélection article remplacée par combobox (texte libre + dropdown filtré) ; nouvel article créé automatiquement si inexistant ; `addArticle` passé en prop depuis App ; erreurs fetch loggées dans useZones/useArticles ; addBesoin/updateBesoin/deleteBesoin wrappés en useCallback |
 
 ## Décisions techniques
 

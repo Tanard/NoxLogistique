@@ -69,6 +69,11 @@ export const ROLE_CONFIG = {
   viewer:       { label: 'Viewer',       bg: '#64748B20', text: '#475569', border: '#64748B60' },
 }
 
+export const TOAST_STYLES = {
+  error:   { border: '#FCA5A5', bg: '#FEF2F2', color: '#DC2626' },
+  success: { border: '#6EE7B7', bg: '#ECFDF5', color: '#059669' },
+}
+
 export const SORT_KEYS = {
   'Pôle': 'pole',
   'Date': 'date',

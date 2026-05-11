@@ -7,7 +7,7 @@ import { useTodos } from './hooks/useTodos'
 import { useZones } from './hooks/useZones'
 import { useArticles } from './hooks/useArticles'
 import { usePlanningEvents } from './hooks/usePlanningEvents'
-import { POLES } from './constants'
+import { POLES, TOAST_STYLES } from './constants'
 import { useFestivalMembers } from './hooks/useFestivalMembers'
 import { LoadingScreen } from './components/LoadingScreen'
 import { Sidebar } from './components/Sidebar'
@@ -197,21 +197,21 @@ export default function App() {
     return list
   }, [besoins, filterPole, searchQuery, sortChain])
 
-  const addBesoin = async (data) => {
+  const addBesoin = useCallback(async (data) => {
     const { error } = await addBesoinDB(data)
     if (error) { console.error('[App] addBesoin failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
-  }
+  }, [addBesoinDB, showToast])
 
-  const updateBesoin = async (updated) => {
+  const updateBesoin = useCallback(async (updated) => {
     const { error } = await updateBesoinDB(updated)
     if (error) { console.error('[App] updateBesoin failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
-  }
+  }, [updateBesoinDB, showToast])
 
-  const deleteBesoin = async (id) => {
+  const deleteBesoin = useCallback(async (id) => {
     const { error } = await deleteBesoinDB(id)
     if (error) { console.error('[App] deleteBesoin failed:', error); showToast('Erreur lors de la sauvegarde', 'error') }
     return { error }
-  }
+  }, [deleteBesoinDB, showToast])
 
   const addTodo = useCallback(async (data) => {
     const { error } = await addTodoDB(data)
@@ -393,7 +393,7 @@ export default function App() {
       </Suspense>
 
       {/* Modals */}
-      <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} zones={zones} articles={articles} />
+      <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} zones={zones} articles={articles} addArticle={addArticle} />
       <ModalNouvelleEntree
         open={showNouvelleZone}
         onClose={() => setShowNouvelleZone(false)}
@@ -451,9 +451,9 @@ export default function App() {
             zIndex: 9999,
             padding: '12px 20px',
             borderRadius: '8px',
-            border: `1px solid ${toast.type === 'error' ? '#FCA5A5' : '#6EE7B7'}`,
-            background: toast.type === 'error' ? '#FEF2F2' : '#ECFDF5',
-            color: toast.type === 'error' ? '#DC2626' : '#059669',
+            border: `1px solid ${TOAST_STYLES[toast.type]?.border ?? TOAST_STYLES.error.border}`,
+            background: TOAST_STYLES[toast.type]?.bg ?? TOAST_STYLES.error.bg,
+            color: TOAST_STYLES[toast.type]?.color ?? TOAST_STYLES.error.color,
             fontSize: '14px',
             fontWeight: 500,
             maxWidth: '320px',

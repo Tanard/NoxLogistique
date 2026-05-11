@@ -32,6 +32,17 @@ const MESSAGES = {
 }
 
 const VIEWS = ['month', 'week', 'day']
+
+const EVENT_PROP_GETTER = () => ({
+  style: {
+    backgroundColor: 'var(--color-accent)',
+    borderColor: 'var(--color-accent)',
+    color: '#fff',
+    borderRadius: '4px',
+    fontSize: '0.72rem',
+    border: 'none',
+  },
+})
 const VIEW_LABELS = { month: 'Mois', week: 'Semaine', day: 'Jour' }
 
 export default function PlanningPage({
@@ -158,16 +169,7 @@ export default function PlanningPage({
             messages={MESSAGES}
             culture="fr"
             style={{ height: '100%' }}
-            eventPropGetter={() => ({
-              style: {
-                backgroundColor: 'var(--color-accent)',
-                borderColor: 'var(--color-accent)',
-                color: '#fff',
-                borderRadius: '4px',
-                fontSize: '0.72rem',
-                border: 'none',
-              },
-            })}
+            eventPropGetter={EVENT_PROP_GETTER}
             toolbar={false}
           />
         </div>

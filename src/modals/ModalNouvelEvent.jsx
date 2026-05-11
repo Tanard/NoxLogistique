@@ -47,6 +47,17 @@ export function ModalNouvelEvent({ open, onClose, onSave, onUpdate, onDelete, ev
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
+  const handleDelete = async () => {
+    setSaving(true)
+    try {
+      const { error: delErr } = await onDelete(event.id) ?? {}
+      if (delErr) { setError('Erreur lors de la suppression'); return }
+      onClose()
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleSave = async () => {
     if (!form.title.trim()) { setError('Le titre est requis'); return }
     if (!form.date) { setError('La date est requise'); return }
@@ -125,7 +136,7 @@ export function ModalNouvelEvent({ open, onClose, onSave, onUpdate, onDelete, ev
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-red-600">Confirmer ?</span>
-                <button onClick={async () => { setSaving(true); const { error: delErr } = await onDelete(event.id) ?? {}; setSaving(false); if (delErr) { setError('Erreur lors de la suppression'); return } onClose() }} disabled={saving} className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold disabled:opacity-50">{saving ? '…' : 'Oui'}</button>
+                <button onClick={handleDelete} disabled={saving} className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold disabled:opacity-50">{saving ? '…' : 'Oui'}</button>
                 <button onClick={() => setConfirmDelete(false)} className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 text-xs">Non</button>
               </div>
             )

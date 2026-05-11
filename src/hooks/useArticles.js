@@ -6,11 +6,12 @@ export function useArticles({ festivalId } = {}) {
 
   const fetchArticles = useCallback(async () => {
     if (!festivalId) { setArticles([]); return }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('articles')
       .select('id, nom, commentaire')
       .eq('festival_id', festivalId)
       .order('nom', { ascending: true })
+    if (error) { console.error('[useArticles] fetch:', error); return }
     if (data) setArticles(data)
   }, [festivalId])
 

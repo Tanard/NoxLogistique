@@ -30,11 +30,13 @@ export function useFestivalMap({ enabled = true, festivalId } = {}) {
 
     setMapData(map)
 
-    const [{ data: markersData }, { data: pathsData }] = await Promise.all([
+    const [{ data: markersData, error: markersErr }, { data: pathsData, error: pathsErr }] = await Promise.all([
       supabase.from('map_markers').select('*').eq('festival_map_id', map.id),
       supabase.from('map_paths').select('*').eq('festival_map_id', map.id),
     ])
 
+    if (markersErr) console.error('[useFestivalMap] markers:', markersErr)
+    if (pathsErr) console.error('[useFestivalMap] paths:', pathsErr)
     setMarkers(markersData ?? [])
     setPaths(pathsData ?? [])
   }, [festivalId])

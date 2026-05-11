@@ -6,11 +6,12 @@ export function useZones({ festivalId } = {}) {
 
   const fetchZones = useCallback(async () => {
     if (!festivalId) { setZones([]); return }
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('zones')
       .select('id, nom, commentaire')
       .eq('festival_id', festivalId)
       .order('nom', { ascending: true })
+    if (error) { console.error('[useZones] fetch:', error); return }
     if (data) setZones(data)
   }, [festivalId])
 
