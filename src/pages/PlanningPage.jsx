@@ -47,7 +47,7 @@ const VIEW_LABELS = { month: 'Mois', week: 'Semaine', day: 'Jour' }
 
 export default function PlanningPage({
   user,
-  isAdmin,
+  role,
   isEditor,
   signOut,
   activeFestival,
@@ -109,15 +109,15 @@ export default function PlanningPage({
     /* Layout full-height sans scroll de page */
     <main className="flex-1 overflow-hidden flex flex-col bg-app-bg">
       {/* TopBar + toolbar dans un conteneur fixe */}
-      <div className="flex-shrink-0 px-4 md:px-8 pt-16 md:pt-0">
+      <div className="flex-shrink-0 px-4 md:px-8 pt-16 md:pt-8">
         <TopBar
           user={user}
-          isAdmin={isAdmin}
+          role={role}
           activeFestival={activeFestival}
           onFestivalClick={() => setShowFestivalSelect(true)}
           onSignOut={signOut}
         />
-        <div className="flex items-center justify-between py-3 flex-wrap gap-3">
+        <div className="flex items-center justify-between py-2 flex-wrap gap-3">
           <div className="flex items-center gap-2">
             <button onClick={() => setDate(new Date())} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-white border border-gray-200 hover:border-gray-300 transition-colors">
               Aujourd'hui

@@ -4,7 +4,7 @@ import { NAV_ITEMS } from '../constants'
 
 const NAV_PATH = { home: '/', general: '/dashboard', todo: '/todo', map: '/map', admin: '/admin', planning: '/planning' }
 
-export function Sidebar({ sidebarOpen, setSidebarOpen, isAdmin }) {
+export function Sidebar({ sidebarOpen, setSidebarOpen, isAdmin, isResponsable, canAccessModule, hasFestival }) {
   return (
     <>
       <button
@@ -34,7 +34,12 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, isAdmin }) {
           </NavLink>
         </div>
         <nav className="flex-1 px-3 mt-4">
-          {NAV_ITEMS.filter(item => !item.adminOnly || isAdmin).map(item => (
+          {NAV_ITEMS.filter(item => {
+            if (item.id === 'home') return true
+            if (!hasFestival) return false
+            if (item.id === 'admin') return isAdmin || isResponsable
+            return canAccessModule ? canAccessModule(item.id) : !item.adminOnly
+          }).map(item => (
             <NavLink
               key={item.id}
               to={NAV_PATH[item.id]}
@@ -48,7 +53,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, isAdmin }) {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 text-xs text-gray-600">v1.0</div>
+        <div className="p-4 text-xs text-gray-600">V1.1</div>
       </aside>
     </>
   )

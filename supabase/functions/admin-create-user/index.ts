@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       .from('festival_members')
       .select('role')
       .eq('user_id', caller.id)
-      .eq('role', 'admin')
+      .in('role', ['super_admin', 'admin'])
       .maybeSingle()
 
     if (!membership) {

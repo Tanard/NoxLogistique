@@ -73,7 +73,7 @@ React Router v6 — routes URL avec lazy loading des pages.
 - **Couleurs** : centralisées dans `constants/index.js` (objet `COLORS`) — `BTN_DARK = '#111111'` (même noir que sidebar) utilisé sur les boutons d'action du dashboard
 - **Constantes métier** : toutes dans `constants/index.js` (POLES, STATUTS, TODO_STATUTS, NAV_ITEMS, MAP_ELEMENTS, etc.)
 - **Données** : abonnements Supabase Realtime dans les hooks, pas d'appels fetch directs dans les composants
-- **Rôles** : `admin`, `pole_manager`, `viewer` — exposés via `useAuth` comme `isAdmin` / `isEditor`
+- **Rôles** : 5 rôles — `super_admin`, `admin`, `pole_manager`, `utilisateur`, `viewer` — exposés via `useAuth` comme `isSuperAdmin` / `isAdmin` / `isResponsable` / `isEditor` / `canAccessModule` / `canManageRole` / `assignedPoles`
 - **Enter pour valider** : prop `onConfirm` sur `Modal` — déclenché par Enter sauf depuis textarea
 
 ## Domaine métier
@@ -131,6 +131,10 @@ ALTER TABLE besoins ADD COLUMN zone TEXT;
 | 2026-05-05 | Onglet Planning | PlanningPage.jsx, ModalNouvelEvent.jsx, usePlanningEvents.js, supabase.js, App.jsx, constants/index.js | Calendrier react-big-calendar (mois/semaine/jour) ; double-clic créneau → création ; CRUD événements Supabase Realtime |
 | 2026-05-06 | Audit qualité + corrections | eslint.config.js, App.jsx, Sidebar.jsx, useFestival.js, PlanningPage.jsx, ModalDetail.jsx, ModalNouveau.jsx, DashboardPage.jsx, constants/index.js | 0 erreur ESLint ; `COLOR_SIDEBAR` centralisé dans constants ; sorts mémorisés avec useMemo ; budget mémorisé ; gestion erreur delete ModalNouvelEvent ; audit.sh + skill /audit-logisticore |
 | 2026-05-11 | Combobox article + audit qualité | ModalNouveau.jsx, App.jsx, useZones.js, useArticles.js, PROJECT_STATE.md | Sélection article remplacée par combobox (texte libre + dropdown filtré) ; nouvel article créé automatiquement si inexistant ; `addArticle` passé en prop depuis App ; erreurs fetch loggées dans useZones/useArticles ; addBesoin/updateBesoin/deleteBesoin wrappés en useCallback |
+| 2026-05-11 | RBAC 5 rôles | useAuth.js, useFestival.js, useUsers.js, constants/index.js, Sidebar.jsx, App.jsx, DashboardPage.jsx, AdminPage.jsx, ModalUser.jsx, ModalTodo.jsx, TodoPage.jsx, supabase.js, AccueilPage.jsx | 5 rôles : super_admin/admin/pole_manager/utilisateur/viewer ; colonnes festival_members : poles text[], module_permissions jsonb ; colonne todos : pole ; fonctions RLS mises à jour ; super_admin accède à tous les festivals ; pôles/modules configurables par utilisateur |
+| 2026-05-11 | Features dashboard | DashboardPage.jsx, App.jsx, constants/index.js | Multi-zones sur besoin (checkboxes) ; colonne Total (prix×quantité) ; pôle pré-sélectionné selon filtre ; Budget Prévisionnel + Besoins chiffrés suivent le filtre ; budget par pôle dans chaque carte |
+| 2026-05-11 | Todo pôle | ModalTodo.jsx, TodoPage.jsx, supabase.js | Champ pôle optionnel sur chaque tâche (DB + UI) ; filtre todos par assignedPoles ; description textarea 15 lignes ; modal toujours en édition directe |
+| 2026-05-12 | Audit qualité + corrections console | App.jsx, ModalUser.jsx, main.jsx, useFestivalMembers.js, useAuth.js, AdminPage.jsx, ModalTodo.jsx | ESLint 0 erreur ; React Router future flags v7 ajoutés ; useFestivalMembers fix 400 Bad Request (query JOIN → 2 requêtes) ; modulePermissions wrappé useMemo ; visibleFestivals mémorisé AdminPage ; handleClose ModalTodo reset pôle |
 
 ## Décisions techniques
 

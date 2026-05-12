@@ -4,11 +4,14 @@ import { TodoStatutBadge } from '../components/ui/TodoStatutBadge'
 import { SortableHeader } from '../components/ui/SortableHeader'
 import { PageLayout, PageHeader } from '../components/ui/PageLayout'
 import { TopBar } from '../components/ui/TopBar'
+import { POLES } from '../constants'
 
 const STATUT_ORDER = { 'À faire': 0, 'En cours': 1, 'Terminé': 2 }
+const POLE_MAP = Object.fromEntries(POLES.map(p => [p.label, p]))
 
 const COLUMNS = [
   { label: 'Tâche',   key: 'titre' },
+  { label: 'Pôle',    key: 'pole' },
   { label: 'Assigné', key: 'assignee' },
   { label: 'Statut',  key: 'statut' },
 ]
@@ -22,10 +25,11 @@ export default function TodoPage({
   setShowNew,
   setSelectedTodo,
   user,
-  isAdmin,
+  role,
   activeFestival,
   onFestivalClick,
   signOut,
+  assignedPoles = null,
 }) {
   const [sortKey, setSortKey] = useState('statut')
   const [sortDir, setSortDir] = useState('asc')
@@ -36,7 +40,10 @@ export default function TodoPage({
   }
 
   const filtered = useMemo(() => {
-    let list = todos
+    let list = todos.filter(t => {
+      if (assignedPoles !== null && t.pole && !assignedPoles.includes(t.pole)) return false
+      return true
+    })
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       list = list.filter(t =>
@@ -69,7 +76,7 @@ export default function TodoPage({
     <PageLayout>
       <TopBar
         user={user}
-        isAdmin={isAdmin}
+        role={role}
         activeFestival={activeFestival}
         onFestivalClick={onFestivalClick}
         onSignOut={signOut}
@@ -107,8 +114,8 @@ export default function TodoPage({
         <div className="flex justify-center py-20 text-gray-400 text-sm">Chargement…</div>
       ) : (
         <>
-          <div className="hidden md:block rounded-xl overflow-hidden bg-white border border-gray-200">
-            <table className="w-full">
+          <div className="hidden md:block rounded-xl overflow-x-auto bg-white border border-gray-200">
+            <table className="w-full min-w-[650px]">
               <thead>
                 <tr className="bg-table-hd">
                   {COLUMNS.map(col => (
@@ -136,6 +143,14 @@ export default function TodoPage({
                   >
                     <td className="px-4 py-3 font-semibold max-w-[240px] text-app-text">{t.titre}</td>
                     <td className="px-4 py-3">
+                      {t.pole ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full"
+                          style={{ backgroundColor: (POLE_MAP[t.pole]?.color ?? '#6B7280') + '20', color: POLE_MAP[t.pole]?.color ?? '#6B7280' }}>
+                          {t.pole}
+                        </span>
+                      ) : <span className="text-gray-400 italic text-xs">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 text-sm text-app-text">
                         <User size={13} className="text-gray-400 flex-shrink-0" />
                         {t.assignee || <span className="text-gray-400 italic">—</span>}
@@ -151,7 +166,7 @@ export default function TodoPage({
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="text-center py-16 text-gray-400">
+                    <td colSpan={5} className="text-center py-16 text-gray-400">
                       {todos.length === 0 ? 'Aucune tâche pour ce festival' : 'Aucune tâche trouvée'}
                     </td>
                   </tr>

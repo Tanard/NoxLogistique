@@ -1,21 +1,18 @@
 import { LogOut, Calendar } from 'lucide-react'
 import { BtnSoft } from './buttons'
+import { RoleBadge } from './RoleBadge'
 
-export function TopBar({ user, isAdmin, activeFestival, onFestivalClick, onSignOut }) {
+export function TopBar({ user, role, activeFestival, onFestivalClick, onSignOut }) {
   return (
     <div className="flex justify-between items-center gap-3 flex-wrap mb-4 pb-4 border-b border-gray-700">
       <BtnSoft icon={Calendar} onClick={onFestivalClick} title="Changer de festival">
         {activeFestival?.name ?? 'Festival'}
       </BtnSoft>
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-app-text">
+        <span className="text-sm font-medium text-app-text flex items-center gap-2">
           <span className="text-gray-400">Connecté :</span>{' '}
           {user?.user_metadata?.full_name || user?.email}
-          {isAdmin && (
-            <span className="ml-2 px-2 py-0.5 rounded text-xs font-bold text-white bg-accent">
-              Admin
-            </span>
-          )}
+          {role && <RoleBadge role={role} />}
         </span>
         <button
           onClick={onSignOut}

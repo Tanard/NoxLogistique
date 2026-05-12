@@ -60,6 +60,7 @@ export function rowToTodo(row) {
     description: row.description ?? '',
     assignee: row.assignee,
     statut: row.statut,
+    pole: row.pole ?? null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   }
@@ -72,6 +73,7 @@ export function todoToInsertRow(t, festivalId) {
     description: t.description?.trim() || null,
     assignee: t.assignee?.trim(),
     statut: t.statut,
+    pole: t.pole ?? null,
   }
 }
 
@@ -81,6 +83,7 @@ export function todoToUpdateRow(t) {
     description: t.description?.trim() || null,
     assignee: t.assignee?.trim(),
     statut: t.statut,
+    pole: t.pole ?? null,
   }
 }
 

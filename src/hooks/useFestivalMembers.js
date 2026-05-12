@@ -6,18 +6,29 @@ export function useFestivalMembers(festivalId) {
 
   useEffect(() => {
     if (!festivalId) { setMembers([]); return }
-    supabase
-      .from('festival_members')
-      .select('profiles(full_name)')
-      .eq('festival_id', festivalId)
-      .then(({ data }) => {
-        if (!data) return
-        const names = data
-          .map(m => m.profiles?.full_name)
-          .filter(Boolean)
-          .sort((a, b) => a.localeCompare(b, 'fr'))
-        setMembers(names)
-      })
+
+    const load = async () => {
+      const { data: memberRows } = await supabase
+        .from('festival_members')
+        .select('user_id')
+        .eq('festival_id', festivalId)
+
+      if (!memberRows?.length) return
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .in('id', memberRows.map(m => m.user_id))
+
+      if (!profiles) return
+      const names = profiles
+        .map(p => p.full_name)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, 'fr'))
+      setMembers(names)
+    }
+
+    load()
   }, [festivalId])
 
   return members

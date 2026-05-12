@@ -1,10 +1,6 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 
-// Capture le type de flux (invite / recovery) avant que Supabase ne nettoie l'URL.
-// Doit être lu au niveau module (avant tout render React) pour ne pas rater le paramètre.
-// Supabase met le paramètre `type` dans le HASH (#access_token=...&type=invite),
-// pas dans les query params — on vérifie les deux pour couvrir tous les cas.
 const _initialFlowType = (() => {
   try {
     const hash   = new URLSearchParams(window.location.hash.substring(1))
@@ -13,35 +9,61 @@ const _initialFlowType = (() => {
   } catch { return null }
 })()
 
+const EDITOR_ROLES  = ['super_admin', 'admin', 'pole_manager', 'utilisateur']
+const MANAGER_ROLES = ['super_admin', 'admin', 'pole_manager']
+const ADMIN_ROLES   = ['super_admin', 'admin']
+
 export function useAuth() {
-  const [user, setUser]       = useState(undefined) // undefined = pas encore chargé
-  const [role, setRole]       = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]             = useState(undefined)
+  const [role, setRole]             = useState(null)
+  const [membership, setMembership] = useState(null)
+  const [loading, setLoading]       = useState(true)
   const isMounted = useRef(true)
 
-  // true si l'utilisateur vient d'un lien d'invitation ou de réinitialisation
   const [needsPasswordSet, setNeedsPasswordSet] = useState(
     _initialFlowType === 'invite' || _initialFlowType === 'recovery'
   )
 
-  // Charge le rôle depuis festival_members pour un festivalId donné
   const loadRole = useCallback(async (userId, festivalId) => {
-    if (!userId || !festivalId) { setRole(null); return }
+    if (!userId || !festivalId) {
+      setRole(null)
+      setMembership(null)
+      return
+    }
+
+    // Vérifie d'abord si l'utilisateur est super_admin sur N'IMPORTE quel festival
+    const { data: superAdminRow } = await supabase
+      .from('festival_members')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('role', 'super_admin')
+      .limit(1)
+      .maybeSingle()
+
+    if (superAdminRow) {
+      if (isMounted.current) {
+        setRole('super_admin')
+        setMembership({ role: 'super_admin', poles: null, module_permissions: {} })
+      }
+      return
+    }
+
+    // Sinon charge le rôle pour le festival courant
     const { data } = await supabase
       .from('festival_members')
-      .select('role')
+      .select('role, poles, module_permissions')
       .eq('festival_id', festivalId)
       .eq('user_id', userId)
       .maybeSingle()
-    if (isMounted.current) setRole(data?.role ?? null)
+    if (isMounted.current) {
+      setRole(data?.role ?? null)
+      setMembership(data ?? null)
+    }
   }, [])
 
   useEffect(() => {
     isMounted.current = true
 
-    // 1. Lecture initiale de la session (cache local Supabase)
-    // C4 — .catch() ajouté : évite que l'app reste bloquée en état "loading"
-    //      si le réseau est KO ou si Supabase retourne une erreur inattendue
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
         if (!isMounted.current) return
@@ -55,15 +77,10 @@ export function useAuth() {
         setLoading(false)
       })
 
-    // 2. Écoute tous les changements d'état auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted.current) return
       setUser(session?.user ?? null)
-      if (!session) setRole(null)
-      // Quand l'utilisateur arrive via un lien d'invitation, Supabase émet
-      // un événement SIGNED_IN avec session.user.app_metadata.provider = 'email'
-      // et l'URL contient type=invite (déjà capturé dans _initialFlowType).
-      // On active aussi needsPasswordSet si l'event indique une invitation.
+      if (!session) { setRole(null); setMembership(null) }
       if (event === 'SIGNED_IN' && session?.user?.app_metadata?.invited_at) {
         setNeedsPasswordSet(true)
       }
@@ -92,7 +109,6 @@ export function useAuth() {
     return { data, error }
   }, [])
 
-  // Définit le mot de passe de l'utilisateur connecté (flux invite / recovery)
   const setPassword = useCallback(async (newPassword) => {
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (!error) setNeedsPasswordSet(false)
@@ -100,25 +116,72 @@ export function useAuth() {
   }, [])
 
   const signOut = useCallback(async () => {
-    // Clear l'état React immédiatement pour une UX instantanée
     setUser(null)
     setRole(null)
-    // Puis nettoie la session Supabase (localStorage + serveur)
-    try {
-      await supabase.auth.signOut()
-    } catch (e) {
-      console.error('[signOut]', e)
-    }
+    setMembership(null)
+    try { await supabase.auth.signOut() } catch (e) { console.error('[signOut]', e) }
   }, [])
+
+  const isSuperAdmin  = role === 'super_admin'
+  const isAdmin       = ADMIN_ROLES.includes(role)
+  const isResponsable = role === 'pole_manager'
+  const isEditor      = EDITOR_ROLES.includes(role)
+  const isManager     = MANAGER_ROLES.includes(role)
+
+  const assignedPoles     = membership?.poles ?? null
+  const modulePermissions = useMemo(
+    () => membership?.module_permissions ?? {},
+    [membership]
+  )
+
+  const canViewModule = useCallback((moduleId) => {
+    if (isManager) return true
+    if (moduleId === 'admin') return false
+    if (moduleId === 'home')  return true
+    if (!isEditor) return false
+    if (!assignedPoles || assignedPoles.length === 0) return false
+    return moduleId in modulePermissions
+  }, [isManager, isEditor, assignedPoles, modulePermissions])
+
+  const canEditModule = useCallback((moduleId) => {
+    if (isManager) return true
+    if (!assignedPoles || assignedPoles.length === 0) return false
+    return modulePermissions[moduleId] === 'edit'
+  }, [isManager, assignedPoles, modulePermissions])
+
+  const canAccessModule = canViewModule
+
+  const canAccessPole = useCallback((poleLabel) => {
+    if (isManager) return true
+    if (!assignedPoles || assignedPoles.length === 0) return false
+    return assignedPoles.includes(poleLabel)
+  }, [isManager, assignedPoles])
+
+  const canManageRole = useCallback((targetRole, targetUserId) => {
+    if (isSuperAdmin) return true
+    if (isAdmin) return !ADMIN_ROLES.includes(targetRole) && targetUserId !== user?.id
+    if (isResponsable) return !MANAGER_ROLES.includes(targetRole)
+    return false
+  }, [isSuperAdmin, isAdmin, isResponsable, user?.id])
 
   return {
     user: user === undefined ? null : user,
     role,
-    isAdmin:       role === 'admin',
-    isEditor:      role === 'admin' || role === 'pole_manager',
+    isSuperAdmin,
+    isAdmin,
+    isResponsable,
+    isEditor,
+    isManager,
     loading:       loading || user === undefined,
     needsPasswordSet,
     isRecovery:    _initialFlowType === 'recovery',
+    assignedPoles,
+    modulePermissions,
+    canViewModule,
+    canEditModule,
+    canAccessModule,
+    canAccessPole,
+    canManageRole,
     loadRole,
     signIn,
     signUp,

@@ -22,6 +22,18 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
   const zonesSorted = useMemo(() => [...zones].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [zones])
   const articlesSorted = useMemo(() => [...articles].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [articles])
 
+  const selectedZones = useMemo(
+    () => form.zone ? form.zone.split(', ').filter(Boolean) : [],
+    [form.zone]
+  )
+
+  const toggleZone = (nom) => {
+    const next = selectedZones.includes(nom)
+      ? selectedZones.filter(z => z !== nom)
+      : [...selectedZones, nom]
+    set('zone', next.join(', '))
+  }
+
   if (!besoin) return null
 
   const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
@@ -76,10 +88,18 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
           <div>
             <label className="block text-xs text-gray-500 mb-1">Zone</label>
             {canEdit ? (
-              <select value={form.zone ?? ''} onChange={e => set('zone', e.target.value)} className="input-light">
-                <option value="">— Aucune —</option>
-                {zonesSorted.map(z => <option key={z.id} value={z.nom}>{z.nom}</option>)}
-              </select>
+              zonesSorted.length === 0 ? (
+                <p className="text-xs text-gray-400">Aucune zone.</p>
+              ) : (
+                <div className="border border-gray-200 rounded-lg max-h-28 overflow-y-auto divide-y divide-gray-100">
+                  {zonesSorted.map(z => (
+                    <label key={z.id} className="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-gray-50">
+                      <input type="checkbox" checked={selectedZones.includes(z.nom)} onChange={() => toggleZone(z.nom)} className="rounded" />
+                      <span className="text-xs">{z.nom}</span>
+                    </label>
+                  ))}
+                </div>
+              )
             ) : (
               <p className="text-sm text-gray-900">{form.zone || '—'}</p>
             )}
@@ -145,7 +165,7 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
                 <span className="text-xs text-gray-500">Suppléments</span>
               </label>
               {supplementsActif && (
-                <textarea value={form.usage ?? ''} onChange={e => set('usage', e.target.value)} rows={2} className="input-light resize-none" />
+                <textarea value={form.usage ?? ''} onChange={e => set('usage', e.target.value)} rows={2} className="input-light" />
               )}
             </>
           ) : (
@@ -162,7 +182,7 @@ export function ModalDetail({ open, onClose, besoin, onUpdate, onDelete, isAdmin
         <div>
           <label className="block text-xs text-gray-500 mb-1">Commentaire</label>
           {canEdit ? (
-            <textarea value={form.caracteristique ?? ''} onChange={e => set('caracteristique', e.target.value)} rows={2} className="input-light resize-none" />
+            <textarea value={form.caracteristique ?? ''} onChange={e => set('caracteristique', e.target.value)} rows={2} className="input-light" />
           ) : (
             <p className="text-sm text-gray-900">{form.caracteristique || '—'}</p>
           )}

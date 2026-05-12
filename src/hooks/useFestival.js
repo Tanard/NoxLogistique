@@ -24,33 +24,39 @@ export function useFestival(userId) {
     // Fix #10 — on identifie cet appel ; tout appel plus récent l'annule
     const callId = ++currentCallRef.current
 
-    const { data, error } = await supabase
+    // Super_admin : accès global à tous les festivals
+    const { data: superAdminRow } = await supabase
       .from('festival_members')
-      .select('role, festivals(id, name, slug)')
+      .select('id')
       .eq('user_id', uid)
+      .eq('role', 'super_admin')
+      .limit(1)
+      .maybeSingle()
 
-    // Fix #10 — si un appel plus récent a démarré, on ignore ce résultat
-    if (callId !== currentCallRef.current) {
-      setLoadingFestivals(false)
-      return
-    }
+    let list = []
 
-    if (error) {
-      console.error('[useFestival] loadFestivals error:', error)
-      setFestivals([])
+    if (superAdminRow) {
+      const { data: allFestivals, error } = await supabase
+        .from('festivals')
+        .select('id, name, slug')
+        .order('name', { ascending: true })
+      if (callId !== currentCallRef.current) { setLoadingFestivals(false); return }
+      if (!error) list = (allFestivals ?? []).map(f => ({ ...f, role: 'super_admin' }))
     } else {
-      const list = (data ?? [])
-        .filter(d => d.festivals)
-        .map(d => ({ ...d.festivals, role: d.role }))
-      setFestivals(list)
-
-      // Restaure le dernier festival sélectionné ou prend le premier dispo
-      // Fix #25 — localStorage entouré de try/catch
-      let saved = null
-      try { saved = localStorage.getItem('logisticore_festival_id') } catch { /* localStorage indisponible */ }
-      const match = list.find(f => f.id === saved)
-      setSelectedId(match ? match.id : (list[0]?.id ?? null))
+      const { data, error } = await supabase
+        .from('festival_members')
+        .select('role, festivals(id, name, slug)')
+        .eq('user_id', uid)
+      if (callId !== currentCallRef.current) { setLoadingFestivals(false); return }
+      if (error) { console.error('[useFestival] loadFestivals error:', error); setFestivals([]); setLoadingFestivals(false); return }
+      list = (data ?? []).filter(d => d.festivals).map(d => ({ ...d.festivals, role: d.role }))
     }
+
+    setFestivals(list)
+    let saved = null
+    try { saved = localStorage.getItem('logisticore_festival_id') } catch { /* localStorage indisponible */ }
+    const match = list.find(f => f.id === saved)
+    setSelectedId(match ? match.id : (list[0]?.id ?? null))
     setLoadingFestivals(false)
   }, [])
 

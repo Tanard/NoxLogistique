@@ -49,7 +49,8 @@ export function ModalNouvelleEntree({ open, onClose, titre, placeholder, onSave,
             onChange={e => setCommentaire(e.target.value)}
             rows={3}
             placeholder="Informations complémentaires…"
-            className="input-light resize-none"
+            className="input-light"
+            spellCheck={true}
           />
         </div>
       </div>

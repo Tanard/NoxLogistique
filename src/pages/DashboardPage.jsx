@@ -14,7 +14,7 @@ const COLUMNS = [
   { label: 'Date',     key: 'date' },
   { label: 'Article',  key: 'designation' },
   { label: 'Quantité', key: 'quantite' },
-  { label: 'Prix unit.', key: 'prix' },
+  { label: 'Total', key: 'prix' },
   { label: 'Statut',   key: 'statut' },
 ]
 
@@ -30,13 +30,15 @@ function sortItems(items, key, dir) {
 
 export default function DashboardPage({
   user,
-  isAdmin,
+  role,
   isEditor,
   signOut,
   activeFestival,
   besoins,
   filtered,
   counts,
+  poleBudgets = {},
+  assignedPoles = null,
   filterPole,
   setFilterPole,
   searchQuery,
@@ -68,14 +70,18 @@ export default function DashboardPage({
   useEffect(() => { setCurrentPage(1) }, [filterPole, searchQuery])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const visiblePoles = useMemo(
+    () => POLES.filter(p => !assignedPoles || assignedPoles.includes(p.label)),
+    [assignedPoles]
+  )
 
   const budget = useMemo(() => {
-    const avecPrix = besoins.filter(b => b.prix !== '' && b.prix !== null && b.prix !== undefined)
+    const avecPrix = filtered.filter(b => b.prix !== '' && b.prix !== null && b.prix !== undefined)
     return {
       total: avecPrix.reduce((s, b) => s + Number(b.prix) * Number(b.quantite), 0),
       count: avecPrix.length,
     }
-  }, [besoins])
+  }, [filtered])
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   const zonesSorted = useMemo(() => {
@@ -116,7 +122,7 @@ export default function DashboardPage({
     <PageLayout wide>
       <TopBar
         user={user}
-        isAdmin={isAdmin}
+        role={role}
         activeFestival={activeFestival}
         onFestivalClick={() => setShowFestivalSelect(true)}
         onSignOut={signOut}
@@ -137,7 +143,7 @@ export default function DashboardPage({
             <p className={`text-xl font-bold ${filterPole === null ? 'text-white' : 'text-gray-900'}`}>{besoins.length}</p>
           </div>
         </button>
-        {POLES.map(pole => {
+        {visiblePoles.map(pole => {
           const active = filterPole === pole.label
           return (
             <button
@@ -154,6 +160,11 @@ export default function DashboardPage({
               <div className="text-left">
                 <p className="text-sm whitespace-nowrap" style={{ color: active ? 'rgba(255,255,255,0.75)' : '#374151' }}>{pole.label}</p>
                 <p className="text-xl font-bold" style={{ color: active ? '#fff' : '#111827' }}>{counts[pole.label]}</p>
+                {poleBudgets[pole.label] > 0 && (
+                  <p className="text-xs mt-0.5" style={{ color: active ? 'rgba(255,255,255,0.65)' : '#6B7280' }}>
+                    {poleBudgets[pole.label].toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €
+                  </p>
+                )}
               </div>
             </button>
           )
@@ -168,7 +179,7 @@ export default function DashboardPage({
         </div>
         <div className="flex-1 rounded-xl px-5 py-3 bg-white border border-gray-200">
           <p className="text-xs text-gray-500 mb-0.5">Besoins chiffrés</p>
-          <p className="text-lg font-bold text-app-text">{budget.count} <span className="text-sm font-normal text-gray-400">/ {besoins.length}</span></p>
+          <p className="text-lg font-bold text-app-text">{budget.count} <span className="text-sm font-normal text-gray-400">/ {filtered.length}</span></p>
         </div>
       </div>
 
@@ -223,8 +234,8 @@ export default function DashboardPage({
       {/* Vue Besoins */}
       {activeView === 'besoins' && (
         <>
-          <div className="hidden md:block rounded-xl overflow-hidden bg-white border border-gray-200">
-            <table className="w-full">
+          <div className="hidden md:block rounded-xl overflow-x-auto bg-white border border-gray-200">
+            <table className="w-full min-w-[700px]">
               <thead>
                 <tr className="bg-table-hd">
                   {COLUMNS.map(col => (
@@ -240,7 +251,7 @@ export default function DashboardPage({
                     <td className="px-4 py-1.5 text-xs text-gray-400">{formatDate(b.date)}</td>
                     <td className="px-4 py-1.5 font-medium text-app-text">{b.designation}</td>
                     <td className="px-4 py-1.5 text-center text-app-text">{b.quantite}</td>
-                    <td className="px-4 py-1.5 text-center text-app-text">{b.prix !== '' && b.prix !== null && b.prix !== undefined ? `${Number(b.prix).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €` : '—'}</td>
+                    <td className="px-4 py-1.5 text-center text-app-text">{b.prix !== '' && b.prix !== null && b.prix !== undefined ? `${(Number(b.prix) * Number(b.quantite)).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} €` : '—'}</td>
                     <td className="px-4 py-1.5"><StatutBadge statut={b.statut} /></td>
                   </tr>
                 ))}

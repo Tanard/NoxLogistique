@@ -119,7 +119,8 @@ export function ModalNouvelEvent({ open, onClose, onSave, onUpdate, onDelete, ev
             onChange={e => set('notes', e.target.value)}
             rows={3}
             placeholder="Ajouter des notes…"
-            className="input-light resize-none"
+            className="input-light"
+            spellCheck={true}
           />
         </div>
 

@@ -61,7 +61,11 @@ export default function App() {
   }, [])
   useEffect(() => () => { if (toastTimerRef.current) clearTimeout(toastTimerRef.current) }, [])
 
-  const { user, isAdmin, isEditor, signIn, signUp, signOut, loadRole, needsPasswordSet, isRecovery, setPassword } = useAuth()
+  const {
+    user, role, isAdmin, isSuperAdmin, isResponsable, isEditor, isManager,
+    signIn, signUp, signOut, loadRole, needsPasswordSet, isRecovery, setPassword,
+    assignedPoles, canAccessModule, canEditModule, canManageRole,
+  } = useAuth()
   const { festivals, activeFestival, selectedId, selectFestival, loadingFestivals } = useFestival(user?.id)
 
   // A2 — Fusion des deux effets loadRole en un seul
@@ -85,7 +89,7 @@ export default function App() {
       prevUserIdRef.current = user.id
       let hasSavedFestival = false
       try { hasSavedFestival = !!localStorage.getItem('logisticore_festival_id') } catch { /* localStorage indisponible (mode privé) */ }
-      if (festivals.length !== 1 && !hasSavedFestival) {
+      if (!hasSavedFestival) {
         setShowFestivalSelect(true)
       }
     }
@@ -149,6 +153,17 @@ export default function App() {
     return map
   }, [besoins])
 
+  const poleBudgets = useMemo(() => {
+    const map = {}
+    POLES.forEach(p => { map[p.label] = 0 })
+    besoins.forEach(b => {
+      if (map[b.pole] !== undefined && b.prix !== '' && b.prix !== null && b.prix !== undefined) {
+        map[b.pole] += Number(b.prix) * Number(b.quantite)
+      }
+    })
+    return map
+  }, [besoins])
+
   // Fix #19 — Ferme la modal de détail si le besoin est supprimé via Realtime
   useEffect(() => {
     if (selectedBesoin && !besoins.find(b => b.id === selectedBesoin.id)) {
@@ -168,6 +183,7 @@ export default function App() {
 
   const filtered = useMemo(() => {
     let list = besoins.filter(b => {
+      if (!isManager && (!assignedPoles || !assignedPoles.includes(b.pole))) return false
       if (filterPole && b.pole !== filterPole) return false
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
@@ -195,7 +211,7 @@ export default function App() {
       return 0
     })
     return list
-  }, [besoins, filterPole, searchQuery, sortChain])
+  }, [besoins, filterPole, searchQuery, sortChain, assignedPoles, isManager])
 
   const addBesoin = useCallback(async (data) => {
     const { error } = await addBesoinDB(data)
@@ -279,6 +295,9 @@ export default function App() {
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         isAdmin={isAdmin}
+        isResponsable={isResponsable}
+        canAccessModule={canAccessModule}
+        hasFestival={!!selectedId}
       />
 
       <Suspense fallback={null}>
@@ -288,26 +307,31 @@ export default function App() {
             element={
               <AccueilPage
                 user={user}
+                role={role}
                 isAdmin={isAdmin}
                 activeFestival={activeFestival}
                 onFestivalClick={() => setShowFestivalSelect(true)}
                 signOut={signOut}
+                canAccessModule={canAccessModule}
               />
             }
           />
           <Route
             path="/dashboard"
-            element={
+            element={!selectedId ? <Navigate to="/" replace /> :
               <DashboardPage
                 user={user}
+                role={role}
                 isAdmin={isAdmin}
-                isEditor={isEditor}
+                isEditor={isEditor && canEditModule('general')}
                 signOut={signOut}
                 activeFestival={activeFestival}
                 selectedId={selectedId}
                 besoins={besoins}
                 filtered={filtered}
                 counts={counts}
+                poleBudgets={poleBudgets}
+                assignedPoles={assignedPoles}
                 filterPole={filterPole}
                 setFilterPole={setFilterPole}
                 searchQuery={searchQuery}
@@ -329,9 +353,9 @@ export default function App() {
           />
           <Route
             path="/todo"
-            element={
+            element={!selectedId ? <Navigate to="/" replace /> :
               <TodoPage
-                isEditor={isEditor}
+                isEditor={isEditor && canEditModule('todo')}
                 todos={todos}
                 loading={todosLoading}
                 searchQuery={todoSearch}
@@ -339,29 +363,32 @@ export default function App() {
                 setShowNew={setShowNewTodo}
                 setSelectedTodo={setSelectedTodo}
                 user={user}
+                role={role}
                 isAdmin={isAdmin}
                 activeFestival={activeFestival}
                 onFestivalClick={() => setShowFestivalSelect(true)}
                 signOut={signOut}
+                assignedPoles={assignedPoles}
               />
             }
           />
           <Route
             path="/map"
-            element={
+            element={!selectedId ? <Navigate to="/" replace /> :
               <MapPage
                 festivalId={selectedId ?? undefined}
-                isEditor={isEditor}
+                isEditor={isEditor && canEditModule('map')}
               />
             }
           />
           <Route
             path="/planning"
-            element={
+            element={!selectedId ? <Navigate to="/" replace /> :
               <PlanningPage
                 user={user}
+                role={role}
                 isAdmin={isAdmin}
-                isEditor={isEditor}
+                isEditor={isEditor && canEditModule('planning')}
                 signOut={signOut}
                 activeFestival={activeFestival}
                 events={planningEvents}
@@ -375,12 +402,17 @@ export default function App() {
           <Route
             path="/admin"
             element={
-              isAdmin
+              (isAdmin || isResponsable)
                 ? <AdminPage
+                    isSuperAdmin={isSuperAdmin}
                     isAdmin={isAdmin}
+                    isResponsable={isResponsable}
+                    canManageRole={canManageRole}
+                    myFestivalIds={festivals.map(f => f.id)}
                     festivals={festivals}
                     showToast={showToast}
                     user={user}
+                    role={role}
                     activeFestival={activeFestival}
                     onFestivalClick={() => setShowFestivalSelect(true)}
                     signOut={signOut}
@@ -393,7 +425,7 @@ export default function App() {
       </Suspense>
 
       {/* Modals */}
-      <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} zones={zones} articles={articles} addArticle={addArticle} />
+      <ModalNouveau open={showNew} onClose={() => setShowNew(false)} onSave={addBesoin} zones={zones} articles={articles} addArticle={addArticle} filterPole={filterPole} />
       <ModalNouvelleEntree
         open={showNouvelleZone}
         onClose={() => setShowNouvelleZone(false)}
@@ -415,7 +447,7 @@ export default function App() {
         onUpdate={updateBesoin}
         onDelete={deleteBesoin}
         isAdmin={isAdmin}
-        isEditor={isEditor}
+        isEditor={isEditor && canEditModule('general')}
         zones={zones}
         articles={articles}
       />
@@ -435,7 +467,7 @@ export default function App() {
           onUpdate={updateTodo}
           onDelete={deleteTodo}
           isAdmin={isAdmin}
-          isEditor={isEditor}
+          isEditor={isEditor && canEditModule('todo')}
           festivalId={selectedId ?? undefined}
           festivalMembers={festivalMembers}
         />

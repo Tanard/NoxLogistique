@@ -7,16 +7,17 @@ import { TopBar } from '../components/ui/TopBar'
 import { PageLayout } from '../components/ui/PageLayout'
 import { Search, UserPlus, Users, RefreshCw } from 'lucide-react'
 
-/** Retourne le rôle le plus élevé parmi les memberships d'un utilisateur */
 function getTopRole(memberships) {
+  if (memberships.some(m => m.role === 'super_admin'))  return 'super_admin'
   if (memberships.some(m => m.role === 'admin'))        return 'admin'
   if (memberships.some(m => m.role === 'pole_manager')) return 'pole_manager'
+  if (memberships.some(m => m.role === 'utilisateur'))  return 'utilisateur'
   return 'viewer'
 }
 
-const ROLE_ORDER = { admin: 0, pole_manager: 1, viewer: 2 }
+const ROLE_ORDER = { super_admin: 0, admin: 1, pole_manager: 2, utilisateur: 3, viewer: 4 }
 
-export default function AdminPage({ isAdmin, festivals, showToast, user, activeFestival, onFestivalClick, signOut }) {
+export default function AdminPage({ isSuperAdmin, isAdmin, isResponsable, canManageRole, myFestivalIds = [], festivals, showToast, user, role, activeFestival, onFestivalClick, signOut }) {
   const [searchQuery, setSearchQuery]     = useState('')
   const [selectedUser, setSelectedUser]   = useState(null)
   const [showCreate, setShowCreate]       = useState(false)
@@ -31,20 +32,26 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
 
   const {
     users, loading, reload,
-    updateRole, addMembership, removeMembership,
+    updateRole, addMembership, updateMembershipDetails, removeMembership,
     createUser, deleteUser, sendPasswordReset,
-  } = useUsers({ enabled: isAdmin })
+  } = useUsers({ enabled: isAdmin || isResponsable })
 
   // P1 — useMemo : évite de recalculer à chaque render inutile
-  const festivalStats = useMemo(() => festivals.map(f => {
+  const visibleFestivals = useMemo(
+    () => isAdmin ? festivals : festivals.filter(f => myFestivalIds.includes(f.id)),
+    [isAdmin, festivals, myFestivalIds]
+  )
+
+  const festivalStats = useMemo(() => visibleFestivals.map(f => {
     const members = users.filter(u => u.memberships.some(m => m.festivalId === f.id))
     const admins = members.filter(u => u.memberships.find(m => m.festivalId === f.id)?.role === 'admin')
     return { ...f, memberCount: members.length, adminCount: admins.length }
-  }), [festivals, users])
+  }), [visibleFestivals, users])
 
   // P1 — useMemo : filtre + tri recalculés seulement quand les dépendances changent
   const filtered = useMemo(() => {
     const list = users.filter(u => {
+      if (!isAdmin && !u.memberships.some(m => myFestivalIds.includes(m.festivalId))) return false
       if (selectedFestival && !u.memberships.some(m => m.festivalId === selectedFestival)) return false
       if (!searchQuery) return true
       const q = searchQuery.toLowerCase()
@@ -66,7 +73,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
       return 0
     })
     return sorted
-  }, [users, selectedFestival, searchQuery, sortKey, sortDir])
+  }, [users, selectedFestival, searchQuery, sortKey, sortDir, isAdmin, myFestivalIds])
 
   return (
     <>
@@ -75,6 +82,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
           user={user}
           isAdmin={isAdmin}
           activeFestival={activeFestival}
+          role={role}
           onFestivalClick={onFestivalClick}
           onSignOut={signOut}
         />
@@ -101,20 +109,22 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
 
         {/* ── Cartes Festivals ────────────────────────────────────────────────── */}
         <div className="flex gap-3 overflow-x-auto pb-2 mb-6">
-          {/* Total Festivals */}
-          <button
-            onClick={() => setSelectedFestival(null)}
-            className={`flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[160px] cursor-pointer transition-all border ${selectedFestival === null ? 'bg-accent border-accent' : 'border-accent/30 hover:bg-accent/20'}`}
-            style={selectedFestival === null ? {} : { backgroundColor: 'rgba(124,58,237,0.10)' }}
-          >
-            <div className={`p-2 rounded-lg ${selectedFestival === null ? 'bg-white/20' : 'bg-accent/20'}`}>
-              <Users size={18} className={selectedFestival === null ? 'text-white' : 'text-accent'} />
-            </div>
-            <div className="text-left">
-              <p className={`text-sm whitespace-nowrap ${selectedFestival === null ? 'text-white/70' : 'text-gray-600'}`}>Tous les festivals</p>
-              <p className={`text-xl font-bold ${selectedFestival === null ? 'text-white' : 'text-gray-900'}`}>{festivals.length}</p>
-            </div>
-          </button>
+          {/* Total Festivals — visible uniquement pour les admins */}
+          {isAdmin && (
+            <button
+              onClick={() => setSelectedFestival(null)}
+              className={`flex-shrink-0 flex items-center gap-3 rounded-xl p-4 min-w-[160px] cursor-pointer transition-all border ${selectedFestival === null ? 'bg-accent border-accent' : 'border-accent/30 hover:bg-accent/20'}`}
+              style={selectedFestival === null ? {} : { backgroundColor: 'rgba(124,58,237,0.10)' }}
+            >
+              <div className={`p-2 rounded-lg ${selectedFestival === null ? 'bg-white/20' : 'bg-accent/20'}`}>
+                <Users size={18} className={selectedFestival === null ? 'text-white' : 'text-accent'} />
+              </div>
+              <div className="text-left">
+                <p className={`text-sm whitespace-nowrap ${selectedFestival === null ? 'text-white/70' : 'text-gray-600'}`}>Tous les festivals</p>
+                <p className={`text-xl font-bold ${selectedFestival === null ? 'text-white' : 'text-gray-900'}`}>{visibleFestivals.length}</p>
+              </div>
+            </button>
+          )}
 
           {/* Chaque Festival */}
           {festivalStats.map(f => {
@@ -199,7 +209,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
                         {u.memberships.map(m => (
                           <span
                             key={m.festivalId}
-                            className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200"
+                            className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200 whitespace-nowrap"
                           >
                             {m.festivalName}
                           </span>
@@ -241,7 +251,7 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
               {u.memberships.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {u.memberships.map(m => (
-                    <span key={m.festivalId} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                    <span key={m.festivalId} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 whitespace-nowrap">
                       {m.festivalName}
                     </span>
                   ))}
@@ -261,24 +271,20 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
         <ModalUser
           open
           mode="edit"
+          isSuperAdmin={isSuperAdmin}
+          isAdmin={isAdmin}
+          canManageRole={canManageRole}
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
-          festivals={festivals}
+          festivals={visibleFestivals}
           updateRole={updateRole}
           addMembership={addMembership}
+          updateMembershipDetails={updateMembershipDetails}
           removeMembership={removeMembership}
-          onSaved={async () => {
-            // Après "Valider", on recharge la liste en arrière-plan.
-            // On ne rappelle PAS setSelectedUser : le modal est déjà fermé via onClose
-            // (appeler setSelectedUser ici causait une réouverture du modal).
-            await reload()
-          }}
+          onSaved={async () => { await reload() }}
           deleteUser={async (userId) => {
             const res = await deleteUser(userId)
-            if (!res.error) {
-              setSelectedUser(null)
-              await reload()
-            }
+            if (!res.error) { setSelectedUser(null); await reload() }
             return res
           }}
           sendPasswordReset={sendPasswordReset}
@@ -286,23 +292,22 @@ export default function AdminPage({ isAdmin, festivals, showToast, user, activeF
         />
       )}
 
-      {/* ── Modal création utilisateur ────────────────────────────────────── */}
       {showCreate && (
         <ModalUser
           open
           mode="create"
+          isSuperAdmin={isSuperAdmin}
+          isAdmin={isAdmin}
+          canManageRole={canManageRole}
           user={null}
           onClose={() => setShowCreate(false)}
-          festivals={festivals}
+          festivals={visibleFestivals}
           createUser={async (data) => {
             const res = await createUser(data)
-            // P2 — reload explicite (useUsers.createUser ne recharge plus automatiquement)
-            if (!res.error) {
-              await reload()
-              setShowCreate(false)
-            }
+            if (!res.error) { await reload(); setShowCreate(false) }
             return res
           }}
+          addMembership={addMembership}
           showToast={showToast}
         />
       )}

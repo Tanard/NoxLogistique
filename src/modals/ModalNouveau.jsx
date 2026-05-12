@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { Modal } from '../components/ui/Modal'
 import { POLES, todayISO } from '../constants'
 
-export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [], addArticle }) {
-  const [form, setForm] = useState({ pole: POLES[0].label, zone: '', designation: '', quantite: '', prix: '', caracteristique: '', usage: '' })
+export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [], addArticle, filterPole }) {
+  const [form, setForm] = useState({ pole: filterPole ?? [...POLES].sort((a, b) => a.label.localeCompare(b.label, 'fr'))[0].label, zone: '', designation: '', quantite: '', prix: '', caracteristique: '', usage: '' })
   const [supplementsActif, setSupplementsActif] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,19 +15,17 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [],
 
   useEffect(() => {
     if (!open) return
-    setForm({ pole: POLES[0].label, zone: '', designation: '', quantite: '', prix: '', caracteristique: '', usage: '' })
+    setForm({ pole: filterPole ?? [...POLES].sort((a, b) => a.label.localeCompare(b.label, 'fr'))[0].label, zone: '', designation: '', quantite: '', prix: '', caracteristique: '', usage: '' })
     setSupplementsActif(false)
     setError('')
     setLoading(false)
     setInputValue('')
     setShowDropdown(false)
-  }, [open])
+  }, [open, filterPole])
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (comboRef.current && !comboRef.current.contains(e.target)) {
-        setShowDropdown(false)
-      }
+      if (comboRef.current && !comboRef.current.contains(e.target)) setShowDropdown(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -40,6 +38,18 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [],
 
   const zonesSorted = useMemo(() => [...zones].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [zones])
   const articlesSorted = useMemo(() => [...articles].sort((a, b) => a.nom.localeCompare(b.nom, 'fr')), [articles])
+
+  const selectedZones = useMemo(
+    () => form.zone ? form.zone.split(', ').filter(Boolean) : [],
+    [form.zone]
+  )
+
+  const toggleZone = (nom) => {
+    const next = selectedZones.includes(nom)
+      ? selectedZones.filter(z => z !== nom)
+      : [...selectedZones, nom]
+    set('zone', next.join(', '))
+  }
 
   const filtered = useMemo(
     () => articlesSorted.filter(a => a.nom.toLowerCase().includes(inputValue.toLowerCase())),
@@ -99,11 +109,19 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [],
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Zone</label>
-          <select value={form.zone} onChange={e => set('zone', e.target.value)} className="input-light">
-            <option value="">— Aucune —</option>
-            {zonesSorted.map(z => <option key={z.id} value={z.nom}>{z.nom}</option>)}
-          </select>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Zone(s)</label>
+          {zonesSorted.length === 0 ? (
+            <p className="text-xs text-gray-400">Aucune zone configurée.</p>
+          ) : (
+            <div className="border border-gray-200 rounded-lg max-h-32 overflow-y-auto divide-y divide-gray-100">
+              {zonesSorted.map(z => (
+                <label key={z.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                  <input type="checkbox" checked={selectedZones.includes(z.nom)} onChange={() => toggleZone(z.nom)} className="rounded" />
+                  <span className="text-sm">{z.nom}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Article *</label>
@@ -120,19 +138,12 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [],
             {showDropdown && (filtered.length > 0 || isNewArticle) && (
               <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {filtered.map(a => (
-                  <li
-                    key={a.id}
-                    onMouseDown={() => handleSelect(a.nom)}
-                    className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
-                  >
+                  <li key={a.id} onMouseDown={() => handleSelect(a.nom)} className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100">
                     {a.nom}
                   </li>
                 ))}
                 {isNewArticle && (
-                  <li
-                    onMouseDown={() => handleSelect(inputValue.trim())}
-                    className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 text-blue-600 border-t border-gray-100"
-                  >
+                  <li onMouseDown={() => handleSelect(inputValue.trim())} className="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 text-blue-600 border-t border-gray-100">
                     + Créer « {inputValue.trim()} »
                   </li>
                 )}
@@ -152,27 +163,16 @@ export function ModalNouveau({ open, onClose, onSave, zones = [], articles = [],
         </div>
         <div>
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={supplementsActif}
-              onChange={e => handleSupplementsToggle(e.target.checked)}
-              className="rounded"
-            />
+            <input type="checkbox" checked={supplementsActif} onChange={e => handleSupplementsToggle(e.target.checked)} className="rounded" />
             <span className="text-sm font-medium text-gray-700">Suppléments</span>
           </label>
           {supplementsActif && (
-            <textarea
-              value={form.usage}
-              onChange={e => set('usage', e.target.value)}
-              rows={2}
-              placeholder="Détails supplémentaires…"
-              className="input-light resize-none mt-2"
-            />
+            <textarea value={form.usage} onChange={e => set('usage', e.target.value)} rows={2} placeholder="Détails supplémentaires…" className="input-light mt-2" spellCheck={true} />
           )}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
-          <textarea value={form.caracteristique} onChange={e => set('caracteristique', e.target.value)} rows={2} placeholder="Commentaire…" className="input-light resize-none" />
+          <textarea value={form.caracteristique} onChange={e => set('caracteristique', e.target.value)} rows={2} placeholder="Commentaire…" className="input-light" spellCheck={true} />
         </div>
       </div>
       {error && <p className="text-red-600 text-sm mt-2">{error}</p>}

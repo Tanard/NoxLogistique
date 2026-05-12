@@ -64,9 +64,20 @@ export const MAP_PATH_TYPES = [
 // A1 — ROLE_CONFIG déplacé ici depuis AdminPage.jsx pour éviter l'import circulaire
 // (ModalUser importait depuis AdminPage, créant une dépendance cyclique)
 export const ROLE_CONFIG = {
-  admin:        { label: 'Admin',        bg: '#7C3AED20', text: '#7C3AED', border: '#7C3AED60' },
-  pole_manager: { label: 'Responsable',  bg: '#F9731620', text: '#EA580C', border: '#F9731660' },
-  viewer:       { label: 'Viewer',       bg: '#64748B20', text: '#475569', border: '#64748B60' },
+  super_admin:  { label: 'Super Admin',    bg: '#FEF3C720', text: '#B45309', border: '#F59E0B80' },
+  admin:        { label: 'Administrateur', bg: '#FEE2E2',   text: '#DC2626', border: '#EF4444AA' },
+  pole_manager: { label: 'Responsable',    bg: '#F9731620', text: '#EA580C', border: '#F9731660' },
+  utilisateur:  { label: 'Utilisateur',    bg: '#0EA5E920', text: '#0284C7', border: '#0EA5E960' },
+  viewer:       { label: 'Visiteur',       bg: '#64748B20', text: '#475569', border: '#64748B60' },
+}
+
+export const MODULE_IDS = {
+  HOME:      'home',
+  ADMIN:     'admin',
+  DASHBOARD: 'general',
+  TODO:      'todo',
+  MAP:       'map',
+  PLANNING:  'planning',
 }
 
 export const TOAST_STYLES = {

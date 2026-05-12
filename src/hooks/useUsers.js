@@ -38,7 +38,7 @@ export function useUsers({ enabled = false }) {
     //    (visible grâce à la politique RLS is_any_admin())
     const { data: members, error: membersError } = await supabase
       .from('festival_members')
-      .select('user_id, role, festival_id, festivals(id, name)')
+      .select('user_id, role, poles, module_permissions, festival_id, festivals(id, name)')
 
     if (membersError) {
       console.error('[useUsers] members error:', membersError)
@@ -52,9 +52,11 @@ export function useUsers({ enabled = false }) {
     ;(members ?? []).forEach(m => {
       if (!membersByUser[m.user_id]) membersByUser[m.user_id] = []
       membersByUser[m.user_id].push({
-        festivalId:   m.festival_id,
-        festivalName: m.festivals?.name ?? '—',
-        role:         m.role,
+        festivalId:         m.festival_id,
+        festivalName:       m.festivals?.name ?? '—',
+        role:               m.role,
+        poles:              m.poles              ?? null,
+        modulePermissions:  m.module_permissions ?? {},
       })
     })
 
@@ -90,10 +92,22 @@ export function useUsers({ enabled = false }) {
     return { error }
   }, [])
 
-  const addMembership = useCallback(async (userId, festivalId, role = 'viewer') => {
+  const addMembership = useCallback(async (userId, festivalId, role = 'viewer', poles = null, modulePermissions = {}) => {
     const { error } = await supabase
       .from('festival_members')
-      .insert({ user_id: userId, festival_id: festivalId, role })
+      .insert({ user_id: userId, festival_id: festivalId, role, poles, module_permissions: modulePermissions })
+    return { error }
+  }, [])
+
+  const updateMembershipDetails = useCallback(async (userId, festivalId, { poles, modulePermissions }) => {
+    const { error } = await supabase
+      .from('festival_members')
+      .update({
+        poles:              poles?.length > 0 ? poles : null,
+        module_permissions: modulePermissions ?? {},
+      })
+      .eq('user_id', userId)
+      .eq('festival_id', festivalId)
     return { error }
   }, [])
 
@@ -138,6 +152,7 @@ export function useUsers({ enabled = false }) {
     reload: loadUsers,
     updateRole,
     addMembership,
+    updateMembershipDetails,
     removeMembership,
     createUser,
     deleteUser,

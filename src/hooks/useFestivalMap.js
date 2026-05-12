@@ -123,6 +123,27 @@ export function useFestivalMap({ enabled = true, festivalId } = {}) {
     return { error: error ?? null }
   }, [])
 
+  useEffect(() => {
+    if (!mapData?.id) return
+    const channel = supabase
+      .channel(`festival_map:${mapData.id}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'festival_maps', filter: `id=eq.${mapData.id}` }, (payload) => {
+        setMapData(payload.new)
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'map_markers', filter: `festival_map_id=eq.${mapData.id}` }, (payload) => {
+        if (payload.eventType === 'INSERT') setMarkers(prev => prev.find(m => m.id === payload.new.id) ? prev : [...prev, payload.new])
+        if (payload.eventType === 'UPDATE') setMarkers(prev => prev.map(m => m.id === payload.new.id ? payload.new : m))
+        if (payload.eventType === 'DELETE') setMarkers(prev => prev.filter(m => m.id !== payload.old.id))
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'map_paths', filter: `festival_map_id=eq.${mapData.id}` }, (payload) => {
+        if (payload.eventType === 'INSERT') setPaths(prev => prev.find(p => p.id === payload.new.id) ? prev : [...prev, payload.new])
+        if (payload.eventType === 'UPDATE') setPaths(prev => prev.map(p => p.id === payload.new.id ? payload.new : p))
+        if (payload.eventType === 'DELETE') setPaths(prev => prev.filter(p => p.id !== payload.old.id))
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [mapData?.id])
+
   return {
     mapData, markers, paths, loading,
     updateMapView, lockMap, unlockMap,
